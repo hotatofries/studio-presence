@@ -232,6 +232,8 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 /* ── Mission edit actions ── */
 .mission-actions { display: none; align-items: center; gap: 6px; padding: 0 18px 12px; }
 .mission-actions.visible { display: flex; }
+.name-actions { display: none; align-items: center; gap: 6px; padding: 3px 0 0; }
+.name-actions.visible { display: flex; }
 .btn-mission-save { background: var(--surface); color: var(--gold); border: none; border-radius: 6px; padding: 5px 13px; font-family: 'DM Mono', monospace; font-size: .68rem; letter-spacing: .06em; cursor: pointer; transition: opacity .13s; }
 .btn-mission-save:hover { opacity: .8; }
 .btn-mission-discard { background: none; color: var(--muted); border: 1px solid var(--rule); border-radius: 6px; padding: 5px 11px; font-family: 'DM Mono', monospace; font-size: .68rem; cursor: pointer; transition: color .13s; }
@@ -633,7 +635,7 @@ try {
 // ── State ────────────────────────────────────────────────────────────────────
 const KEY = 'studiopresence-tracker-v4'
 function defaultState() {
-  return { v:4, milestones:[], missions:{}, dimOwners:{}, areaOwners:{}, customOutputs:{}, summary:null, updatedAt:null }
+  return { v:4, milestones:[], missions:{}, areaNames:{}, dimOwners:{}, areaOwners:{}, customOutputs:{}, summary:null, updatedAt:null }
 }
 let state = defaultState()
 // Warm-start from localStorage so the UI isn't blank while Firestore loads
@@ -1433,6 +1435,41 @@ function bindCustomTitleEdit(el, id, dimKey) {
   })
 }
 
+function bindAreaNameEdit(el, areaId) {
+  const defaultTitle = AREA_MAP[areaId]?.title || ''
+  const actionsEl = () => document.getElementById('nact-' + areaId)
+  el.addEventListener('focus', () => { const a = actionsEl(); if (a) a.classList.add('visible') })
+  el.addEventListener('blur', () => {
+    const text = el.textContent.trim()
+    if (!state.areaNames) state.areaNames = {}
+    if (text && text !== defaultTitle) state.areaNames[areaId] = text
+    else { delete state.areaNames[areaId]; if (!text) el.textContent = defaultTitle }
+    save()
+    setTimeout(() => { const a = actionsEl(); if (a && document.activeElement !== el) a.classList.remove('visible') }, 120)
+  })
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      el.textContent = state.areaNames?.[areaId] || defaultTitle
+      const a = actionsEl(); if (a) a.classList.remove('visible')
+      el.blur()
+    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); el.blur() }
+  })
+}
+
+function saveNameAction(areaId) {
+  const el = document.querySelector(`.output-card__title[data-area-name="${areaId}"]`)
+  if (el) el.blur()
+}
+
+function discardNameAction(areaId) {
+  const el = document.querySelector(`.output-card__title[data-area-name="${areaId}"]`)
+  if (!el) return
+  el.textContent = state.areaNames?.[areaId] || AREA_MAP[areaId]?.title || ''
+  const a = document.getElementById('nact-' + areaId); if (a) a.classList.remove('visible')
+  el.blur()
+}
+
 function renderDim(dimKey) {
   const dim = DIM_MAP[dimKey]; if (!dim) return ''
   const avg   = dimAvgProgress(dimKey)
@@ -1447,9 +1484,14 @@ function renderDim(dimKey) {
     const areaPct = areaAvgProgress(out.id)
     const ms = state.milestones.filter(m => m.area === out.id)
     const headBarHTML = `<div class="output-card__head-bar"><div class="head-pbar"><div class="head-pbar__fill" style="width:${areaPct ?? 0}%;background:${dim.color}"></div></div><span class="head-pbar-pct">${areaPct !== null ? `${areaPct}%` : '—'}</span></div>`
+    const displayTitle = out.isCustom ? out.title : (state.areaNames?.[out.id] || out.title)
     const titleHTML = out.isCustom
       ? `<div class="output-card__title output-card__title--editable" contenteditable="true" data-custom-title="${out.id}" data-custom-dim="${dimKey}" spellcheck="false">${esc(out.title)}</div>`
-      : `<div class="output-card__title">${esc(out.title)}</div>`
+      : `<div class="output-card__title output-card__title--editable" contenteditable="true" data-area-name="${out.id}" spellcheck="false">${esc(displayTitle)}</div>
+         <div class="name-actions" id="nact-${out.id}">
+           <button class="btn-mission-save" onmousedown="event.preventDefault()" onclick="saveNameAction('${out.id}')">Save</button>
+           <button class="btn-mission-discard" onmousedown="event.preventDefault()" onclick="discardNameAction('${out.id}')">Discard</button>
+         </div>`
     return `<div class="output-card" style="box-shadow:inset 3px 0 0 ${dim.color}">
       <div class="output-card__head">
         <div class="output-card__title-wrap">
@@ -1561,7 +1603,7 @@ function renderPeople() {
         : `<span class="people-empty">Nothing yet</span>`
 
       return `<div class="ppl-row">
-        <div class="ppl-cell--area">${esc(area.title)}</div>
+        <div class="ppl-cell--area">${esc(state.areaNames?.[area.id] || area.title)}</div>
         <div class="ppl-cell--dri">${driChipHTML(area.id, 'area')}</div>
         <div class="ppl-cell--mission">
           <div class="people-mission-wrap">
@@ -1647,6 +1689,10 @@ function render() {
 
   document.querySelectorAll('[data-custom-title]').forEach(el => {
     bindCustomTitleEdit(el, el.dataset.customTitle, el.dataset.customDim)
+  })
+
+  document.querySelectorAll('[data-area-name]').forEach(el => {
+    bindAreaNameEdit(el, el.dataset.areaName)
   })
 }
 
