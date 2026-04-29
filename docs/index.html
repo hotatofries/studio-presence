@@ -241,7 +241,7 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 
 /* ── Custom card delete ── */
 .output-card__head-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.output-card__del-btn { opacity: 0; pointer-events: none; transition: opacity .13s; background: none; border: none; cursor: pointer; color: var(--muted); padding: 5px 7px; border-radius: 5px; display: flex; align-items: center; font-size: .75rem; line-height: 1; }
+.output-card__del-btn { display: none; background: none; border: none; cursor: pointer; color: var(--muted); padding: 5px 7px; border-radius: 5px; align-items: center; font-size: .75rem; line-height: 1; }
 .output-card__del-btn:hover { color: #b03030; background: rgba(176,48,48,.07); }
 .output-card__confirm-bar { display: none; align-items: center; gap: 10px; padding: 11px 18px; border-top: 1px solid rgba(176,48,48,.14); background: rgba(176,48,48,.03); font-size: .72rem; color: var(--muted); }
 .output-card__confirm-bar.visible { display: flex; }
@@ -406,7 +406,7 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .dim-fab:hover .dim-fab__btn svg circle:first-child  { transform: translateX(-2px); }
 .dim-fab:hover .dim-fab__btn svg circle:last-child   { transform: translateX(2px); }
 
-.main--delete-mode .output-card__del-btn { opacity: 1 !important; pointer-events: auto; }
+.main--delete-mode .output-card__del-btn { display: flex; }
 
 /* ── Custom output title (editable) ── */
 .output-card__title--editable { outline: none; cursor: text; border-radius: 3px; transition: background .1s; }
