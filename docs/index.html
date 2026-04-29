@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio Presence — Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper:   #F3EDE2;
+  --surface: #1A0C00;
+  --gold:    #D99F18;
+  --show:    #C9920C;
+  --stage:   #3B6088;
+  --sphere:  #2D6A4F;
+  --ink:     #2A1800;
+  --muted:   #8C7B6B;
+  --rule:    rgba(42,24,0,.1);
+  --sidebar: 210px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body { display: flex; min-height: 100vh; background: var(--paper); color: var(--ink); font-family: 'DM Mono', monospace; }
+
+/* ── Sidebar ── */
+.sidebar { width: var(--sidebar); min-height: 100vh; background: var(--surface); display: flex; flex-direction: column; padding: 28px 0 24px; position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; }
+.sidebar__logo { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; color: var(--gold); letter-spacing: .03em; padding: 0 20px 22px; border-bottom: 1px solid rgba(255,255,255,.07); margin-bottom: 10px; }
+.sidebar__logo span { display: block; font-size: .6rem; font-family: 'DM Mono', monospace; font-weight: 300; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.28); margin-top: 3px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 20px; color: rgba(255,255,255,.45); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; transition: color .14s, background .14s; user-select: none; border-left: 2px solid transparent; }
+.nav-item:hover { color: rgba(255,255,255,.75); background: rgba(255,255,255,.04); }
+.nav-item.active { color: #fff; background: rgba(255,255,255,.06); }
+.nav-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.2); flex-shrink: 0; transition: background .14s; }
+.nav-item.active .nav-dot { background: var(--gold); }
+.nav-item[data-view="dashboard"].active { border-left-color: var(--gold); }
+.nav-item[data-view="show"].active   { border-left-color: var(--show);   }
+.nav-item[data-view="show"].active   .nav-dot { background: var(--show);   }
+.nav-item[data-view="stage"].active  { border-left-color: var(--stage);  }
+.nav-item[data-view="stage"].active  .nav-dot { background: var(--stage);  }
+.nav-item[data-view="sphere"].active { border-left-color: var(--sphere); }
+.nav-item[data-view="sphere"].active .nav-dot { background: var(--sphere); }
+.nav-divider { height: 1px; background: rgba(255,255,255,.07); margin: 10px 20px; }
+.nav-pct { margin-left: auto; font-size: .62rem; color: rgba(255,255,255,.28); letter-spacing: 0; text-transform: none; display: flex; align-items: center; gap: 6px; }
+.nav-pct .dri-avatar-wrap img { border-radius: 50%; opacity: .75; }
+.nav-pct .dri-initials-pill { opacity: .75; }
+
+/* ── Main ── */
+.main { flex: 1; padding: 44px 52px; max-width: 800px; }
+.main--wide { max-width: 1140px; }
+.page-header { margin-bottom: 36px; }
+.page-header__eyebrow { font-size: .62rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.page-header__title { font-family: 'Cormorant Garamond', serif; font-size: 2.4rem; font-weight: 500; line-height: 1.05; color: var(--surface); }
+.page-header__sub { margin-top: 8px; font-size: .76rem; color: var(--muted); line-height: 1.6; max-width: 480px; }
+
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 72px 24px; color: var(--muted); }
+.empty-state__glyph { font-size: 1.8rem; opacity: .25; margin-bottom: 18px; font-family: 'Cormorant Garamond', serif; }
+.empty-state__title { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; color: var(--ink); margin-bottom: 8px; font-weight: 500; }
+.empty-state__body { font-size: .75rem; line-height: 1.7; }
+
+/* ── AI Summary card ── */
+.summary-card {
+  background: rgba(42,24,0,.03);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 36px;
+  position: relative;
+}
+.summary-card__header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.summary-card__label { font-size: .6rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.summary-card__spark { font-size: .7rem; }
+.summary-card__actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.summary-btn {
+  background: none; border: 1px solid var(--rule); border-radius: 6px;
+  padding: 4px 10px; font-family: 'DM Mono', monospace; font-size: .65rem;
+  color: var(--muted); cursor: pointer; transition: all .13s; letter-spacing: .04em;
+}
+.summary-btn:hover { border-color: var(--gold); color: var(--ink); }
+.summary-btn.primary { background: var(--surface); color: var(--gold); border-color: var(--surface); }
+.summary-btn.primary:hover { opacity: .8; }
+.summary-btn:disabled { opacity: .4; cursor: default; }
+.summary-text {
+  font-size: .8rem; line-height: 1.8; color: var(--ink);
+  font-family: 'Cormorant Garamond', serif; font-size: 1rem;
+}
+.summary-text.loading { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .75rem; font-style: italic; }
+.summary-meta { margin-top: 10px; font-size: .62rem; color: var(--muted); }
+.summary-key-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rule); }
+.summary-key-input {
+  flex: 1; background: rgba(42,24,0,.04); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 6px 10px; font-family: 'DM Mono', monospace; font-size: .72rem; color: var(--ink);
+  outline: none;
+}
+.summary-key-input:focus { border-color: var(--gold); }
+.summary-key-input::placeholder { color: var(--muted); }
+
+/* ── Month section ── */
+.month-section { margin-bottom: 44px; }
+.month-header { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+.month-header__name { font-family: 'Cormorant Garamond', serif; font-size: 1.45rem; font-weight: 500; color: var(--surface); }
+.month-header__count { font-size: .65rem; color: var(--muted); letter-spacing: .05em; flex: 1; }
+.pbar-wrap { display: flex; align-items: center; gap: 8px; }
+.pbar { width: 72px; height: 3px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.pbar__fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width .3s; }
+.month-header__pct { font-size: .7rem; color: var(--ink); font-weight: 500; min-width: 32px; text-align: right; }
+
+/* ── Dim group ── */
+.dim-group { margin-bottom: 10px; }
+.dim-group__label { font-size: .59rem; letter-spacing: .16em; text-transform: uppercase; font-weight: 500; padding: 0 10px 5px; }
+.dim-group--show   .dim-group__label { color: var(--show); }
+.dim-group--stage  .dim-group__label { color: var(--stage); }
+.dim-group--sphere .dim-group__label { color: var(--sphere); }
+
+/* ── Milestone row ── */
+.ms-row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px; transition: background .1s; }
+.ms-row:hover { background: rgba(42,24,0,.04); }
+.ms-row:hover .ms-delete { color: var(--muted); }
+.ms-circle { width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid rgba(42,24,0,.25); background: none; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: .58rem; color: transparent; transition: all .15s; cursor: pointer; user-select: none; }
+.ms-circle:hover { border-color: var(--gold); }
+.ms-row.p-doing .ms-circle { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(217,159,24,.18); }
+.ms-row.p-done  .ms-circle { background: var(--sphere); border-color: var(--sphere); color: #fff; }
+.ms-row.p-done  .ms-circle:hover { opacity: .7; }
+.ms-row.p-done  .ms-label { opacity: .4; text-decoration: line-through; }
+.ms-label { flex: 1; font-size: .78rem; line-height: 1.45; color: var(--ink); outline: none; }
+.ms-label.editable { cursor: text; }
+.ms-label.is-editing { background: rgba(217,159,24,.08); border-radius: 3px; padding: 1px 4px; }
+.ms-date-tag { font-size: .62rem; color: var(--muted); white-space: nowrap; letter-spacing: .03em; }
+.ms-area-tag { font-size: .6rem; color: var(--muted); background: rgba(42,24,0,.06); padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+.ms-progress { display: inline-flex; align-items: center; font-size: .62rem; padding: 2px 8px; border-radius: 10px; cursor: pointer; user-select: none; transition: opacity .12s; white-space: nowrap; min-width: 40px; justify-content: center; border: 1px solid transparent; }
+.ms-progress:hover { opacity: .7; }
+.ms-progress.p-zero  { color: var(--muted);  background: rgba(42,24,0,.06);    border-color: rgba(42,24,0,.1); }
+.ms-progress.p-doing { color: #92650a;        background: rgba(217,159,24,.12); border-color: rgba(217,159,24,.25); }
+.ms-progress.p-done  { color: #1e5e3a;        background: rgba(45,106,79,.12);  border-color: rgba(45,106,79,.25); }
+.ms-progress-input { width: 52px; font-size: .62rem; font-family: 'DM Mono', monospace; color: var(--ink); background: rgba(42,24,0,.04); border: 1px solid var(--gold); border-radius: 10px; padding: 2px 8px; text-align: center; outline: none; }
+.ms-delete { background: none; border: none; color: transparent; cursor: pointer; font-size: .68rem; padding: 2px 3px; transition: color .12s; flex-shrink: 0; line-height: 1; }
+.ms-delete:hover { color: #b03030 !important; }
+
+/* ── Milestone output section ── */
+.ms-output-btn { background: none; border: none; cursor: pointer; padding: 2px 4px; flex-shrink: 0; display: flex; align-items: center; gap: 3px; line-height: 1; color: transparent; transition: color .12s; }
+.ms-row:hover .ms-output-btn { color: var(--muted); }
+.ms-output-btn.has-outputs { color: var(--gold) !important; }
+.ms-output-btn .ms-output-count { font-size: .56rem; }
+.ms-output-section { display: none; padding: 2px 10px 12px 37px; }
+.ms-output-section.open { display: block; }
+.ms-output-section-lbl { font-size: .54rem; letter-spacing: .15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; opacity: .65; }
+.ms-output-thumbs { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ms-output-thumb-wrap { position: relative; flex-shrink: 0; }
+.ms-output-thumb { width: 88px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid var(--rule); cursor: pointer; display: block; transition: opacity .12s; }
+.ms-output-thumb:hover { opacity: .8; }
+.ms-output-remove { position: absolute; top: -5px; right: -5px; width: 16px; height: 16px; border-radius: 50%; background: #b03030; color: #fff; border: none; cursor: pointer; font-size: .48rem; display: none; align-items: center; justify-content: center; }
+.ms-output-thumb-wrap:hover .ms-output-remove { display: flex; }
+.ms-output-attach { display: inline-flex; align-items: center; gap: 5px; font-size: .65rem; color: var(--muted); background: none; border: 1.5px dashed var(--rule); border-radius: 6px; padding: 6px 12px; cursor: pointer; transition: border-color .13s, color .13s; }
+.ms-output-attach:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── Output lightbox ── */
+#output-lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.82); z-index: 10000; align-items: center; justify-content: center; cursor: zoom-out; }
+#output-lightbox.open { display: flex; }
+#output-lightbox img { max-width: 90vw; max-height: 88vh; border-radius: 8px; object-fit: contain; box-shadow: 0 4px 40px rgba(0,0,0,.5); cursor: default; }
+#output-lightbox-close { position: absolute; top: 18px; right: 22px; color: rgba(255,255,255,.7); font-size: 1.3rem; cursor: pointer; background: none; border: none; padding: 6px; transition: color .12s; }
+#output-lightbox-close:hover { color: #fff; }
+
+/* ── V-Team overview ── */
+.people-table { border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background-image: linear-gradient(to right, transparent 68px, rgba(42,24,0,.1) 68px, rgba(42,24,0,.1) 71px, transparent 71px); }
+.people-table__head,
+.people-table__row { display: grid; grid-template-columns: 68px 195px 160px 1fr 210px 148px; }
+.people-table__head { background: rgba(42,24,0,.03); border-bottom: 1px solid var(--rule); }
+.people-table__row { border-bottom: 1px solid var(--rule); align-items: start; }
+.people-table__row:last-child { border-bottom: none; }
+.people-col { padding: 16px 18px; font-size: .7rem; }
+.people-table__head .people-col { padding: 11px 18px; font-size: .57rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.people-col--dim { display: flex; align-items: flex-start; justify-content: flex-end; padding: 16px 12px 16px 10px; }
+.people-col--area { border-right: 1px solid var(--rule); }
+.people-col--dri { border-right: 1px solid var(--rule); padding-top: 14px; }
+.people-col--mission { border-right: 1px solid var(--rule); }
+.people-col--done { border-right: 1px solid var(--rule); }
+.people-col--output { padding: 16px 18px; }
+.people-dim-badge { font-size: .62rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding-top: 4px; }
+.people-area-name { font-size: .76rem; color: var(--ink); font-weight: 500; line-height: 1.45; }
+.people-mission-wrap { position: relative; }
+.people-mission-edit { font-size: .69rem; color: var(--ink); line-height: 1.6; outline: none; border-radius: 4px; padding: 2px 5px; margin: -2px -5px; transition: background .1s; cursor: text; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.people-mission-edit.is-default { color: var(--muted); }
+.people-mission-edit:focus { -webkit-line-clamp: unset; overflow: visible; background: rgba(217,159,24,.07); color: var(--ink); }
+.people-mission-edit:empty::before { content: attr(data-placeholder); opacity: .35; }
+.people-mission-pencil { position: absolute; top: 0; right: -2px; background: none; border: none; cursor: pointer; color: transparent; padding: 3px; line-height: 1; transition: color .12s; }
+.people-mission-wrap:hover .people-mission-pencil { color: var(--muted); }
+.people-mission-pencil:hover { color: var(--gold) !important; }
+.people-mission-add { display: inline-flex; align-items: center; gap: 4px; margin-top: 7px; font-size: .62rem; color: var(--gold); background: none; border: 1px dashed rgba(217,159,24,.4); border-radius: 5px; padding: 3px 9px; cursor: pointer; font-family: 'DM Mono', monospace; letter-spacing: .04em; transition: border-color .13s, opacity .12s; }
+.people-mission-add:hover { border-color: var(--gold); opacity: .8; }
+.people-done-item { display: flex; align-items: baseline; gap: 7px; padding: 3px 0; }
+.people-done-check { flex-shrink: 0; color: var(--sphere); position: relative; top: 1px; }
+.people-done-lbl { font-size: .71rem; color: var(--ink); line-height: 1.4; }
+.people-outputs { display: flex; flex-wrap: wrap; gap: 7px; }
+.people-output-thumb { width: 58px; height: 44px; object-fit: cover; border-radius: 5px; border: 1px solid var(--rule); cursor: pointer; transition: opacity .12s; display: block; }
+.people-output-thumb:hover { opacity: .8; }
+.people-empty { font-size: .69rem; color: var(--muted); opacity: .38; }
+
+/* ── Dim page header ── */
+.dim-page-header { display: flex; align-items: stretch; gap: 18px; margin-bottom: 32px; padding-bottom: 28px; border-bottom: 1px solid var(--rule); }
+.dim-accent { width: 4px; border-radius: 2px; flex-shrink: 0; }
+.dim-header-body { flex: 1; }
+.dim-header-name { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 500; color: var(--surface); line-height: 1; margin-bottom: 4px; }
+.dim-header-sub { font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.dim-header-mission { font-size: .8rem; color: var(--muted); line-height: 1.65; max-width: 500px; }
+.dim-header-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+.dim-header-stat { font-size: .65rem; color: var(--muted); letter-spacing: .04em; }
+
+/* ── Output card ── */
+.output-card { border: 1px solid var(--rule); border-radius: 10px; margin-bottom: 18px; overflow: hidden; }
+.output-card__head { display: flex; align-items: center; gap: 12px; padding: 13px 18px 11px; background: rgba(42,24,0,.018); border-bottom: 1px solid var(--rule); }
+.output-card__title-wrap { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.output-card__title { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 500; color: var(--surface); }
+.output-card__head-bar { display: flex; align-items: center; gap: 7px; }
+.head-pbar { width: 64px; height: 3px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.head-pbar__fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width .3s; }
+.head-pbar-pct { font-size: .6rem; color: var(--muted); }
+.output-section-label { font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); padding: 12px 18px 5px; }
+.output-mission { font-size: .76rem; color: var(--muted); line-height: 1.65; padding: 0 18px 14px; outline: none; cursor: text; border-bottom: 1px solid var(--rule); transition: background .1s; min-height: 20px; }
+.output-mission:hover { background: rgba(217,159,24,.04); }
+.output-mission:focus { background: rgba(217,159,24,.07); color: var(--ink); }
+.output-mission:empty::before { content: attr(data-placeholder); opacity: .45; }
+.output-milestones { padding: 4px 0 0; }
+.output-add { padding: 8px 18px 14px; }
+
+/* ── Add milestone form ── */
+.add-ms-btn { display: inline-flex; align-items: center; gap: 6px; font-size: .7rem; color: var(--muted); cursor: pointer; background: none; border: none; padding: 4px 0; font-family: 'DM Mono', monospace; letter-spacing: .05em; transition: color .13s; }
+.add-ms-btn:hover { color: var(--gold); }
+.add-ms-form { display: none; align-items: center; gap: 8px; padding: 10px 0 4px; flex-wrap: wrap; }
+.add-ms-form.visible { display: flex; }
+.fi-text { flex: 1; min-width: 180px; background: rgba(42,24,0,.04); border: 1px solid var(--rule); border-radius: 6px; padding: 7px 11px; font-family: 'DM Mono', monospace; font-size: .76rem; color: var(--ink); outline: none; transition: border-color .13s; }
+.fi-text:focus { border-color: var(--gold); }
+.fi-text::placeholder { color: var(--muted); }
+.fi-date { background: rgba(42,24,0,.04); border: 1px solid var(--rule); border-radius: 6px; padding: 7px 11px; font-family: 'DM Mono', monospace; font-size: .76rem; color: var(--ink); outline: none; transition: border-color .13s; }
+.fi-date:focus { border-color: var(--gold); }
+.btn-save { background: var(--surface); color: var(--gold); border: none; border-radius: 6px; padding: 7px 15px; font-family: 'DM Mono', monospace; font-size: .7rem; letter-spacing: .07em; cursor: pointer; transition: opacity .13s; }
+.btn-save:hover { opacity: .8; }
+.btn-cancel { background: none; color: var(--muted); border: 1px solid var(--rule); border-radius: 6px; padding: 7px 12px; font-family: 'DM Mono', monospace; font-size: .7rem; cursor: pointer; transition: color .13s; }
+.btn-cancel:hover { color: var(--ink); }
+
+/* ── DRI chip ── */
+.dri-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: .66rem; color: var(--muted);
+  background: rgba(42,24,0,.05); border: 1px solid var(--rule);
+  border-radius: 20px; padding: 3px 10px 3px 5px;
+  cursor: pointer; user-select: none;
+  transition: background .13s, border-color .13s;
+  letter-spacing: .02em; white-space: nowrap;
+}
+.dri-chip:hover { background: rgba(42,24,0,.09); border-color: rgba(217,159,24,.5); }
+.dri-chip.has-dri { color: var(--ink); padding-left: 4px; }
+
+.dri-avatar-wrap { position: relative; width: 20px; height: 20px; flex-shrink: 0; }
+.dri-avatar-wrap img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; display: block; }
+.dri-initials-pill {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--gold); color: var(--surface);
+  font-size: .52rem; font-weight: 500;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; letter-spacing: 0;
+}
+.dri-avatar-wrap .dri-initials-pill { position: absolute; top: 0; left: 0; display: none; }
+.dri-avatar-wrap.img-err img { display: none; }
+.dri-avatar-wrap.img-err .dri-initials-pill { display: flex; }
+
+/* ── Floating DRI picker ── */
+#dri-picker {
+  position: fixed;
+  z-index: 9999;
+  display: none;
+  width: 290px;
+  background: #FBF7EE;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(42,24,0,.14), 0 2px 8px rgba(42,24,0,.06);
+  overflow: hidden;
+}
+.dri-search-wrap { padding: 10px 12px 8px; border-bottom: 1px solid var(--rule); }
+#dri-input {
+  width: 100%; background: rgba(42,24,0,.05); border: 1px solid var(--rule);
+  border-radius: 7px; padding: 7px 11px; font-family: 'DM Mono', monospace;
+  font-size: .76rem; color: var(--ink); outline: none; transition: border-color .13s;
+}
+#dri-input:focus { border-color: var(--gold); }
+#dri-input::placeholder { color: var(--muted); }
+#dri-results { max-height: 260px; overflow-y: auto; }
+.dri-result {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 14px; cursor: pointer; transition: background .1s;
+}
+.dri-result:hover { background: rgba(42,24,0,.05); }
+.dri-result.focused { background: rgba(217,159,24,.1); }
+.dri-result--clear { border-top: 1px solid var(--rule); }
+.dri-result--clear:hover { background: rgba(176,48,48,.06); }
+.dri-result-avatar-wrap { position: relative; width: 28px; height: 28px; flex-shrink: 0; }
+.dri-result-avatar-wrap img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.dri-result-avatar-wrap .dri-initials-pill { width: 28px; height: 28px; font-size: .62rem; position: absolute; top:0; left:0; display: none; }
+.dri-result-avatar-wrap.img-err img { display: none; }
+.dri-result-avatar-wrap.img-err .dri-initials-pill { display: flex; }
+.dri-result-info { flex: 1; min-width: 0; }
+.dri-result-name { font-size: .76rem; color: var(--ink); font-weight: 500; }
+.dri-result-title { font-size: .62rem; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dri-result-clear-icon { font-size: .65rem; color: #b03030; }
+.dri-no-results { padding: 12px 14px; font-size: .72rem; color: var(--muted); }
+
+/* ── Prose ── */
+.prose-section { font-size: .8rem; color: var(--muted); line-height: 1.9; }
+.prose-section p { margin-bottom: 12px; }
+.prose-section strong { color: var(--ink); font-weight: 500; }
+
+/* ── About page ── */
+.about-statement { font-family: 'Cormorant Garamond', serif; font-size: 1.7rem; font-weight: 500; color: var(--surface); line-height: 1.4; max-width: 560px; margin-bottom: 48px; }
+.about-dims { display: flex; flex-direction: column; gap: 24px; }
+.about-dim { display: flex; gap: 16px; align-items: flex-start; }
+.about-dim__dot { width: 4px; border-radius: 2px; flex-shrink: 0; margin-top: 4px; align-self: stretch; min-height: 14px; }
+.about-dim__name { font-size: .65rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink); margin-bottom: 5px; }
+.about-dim__mission { font-size: .78rem; color: var(--muted); line-height: 1.7; max-width: 480px; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(42,24,0,.13); border-radius: 3px; }
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar__logo">Studio Presence<span>Design · DD / Wolt / Roo</span></div>
+  <div class="nav-item" data-view="dashboard"><span class="nav-dot"></span>Dashboard</div>
+  <div class="nav-divider"></div>
+  <div class="nav-item" data-view="show"><span class="nav-dot"></span>Show<span class="nav-pct" id="pct-show">—</span></div>
+  <div class="nav-item" data-view="stage"><span class="nav-dot"></span>Stage<span class="nav-pct" id="pct-stage">—</span></div>
+  <div class="nav-item" data-view="sphere"><span class="nav-dot"></span>Sphere<span class="nav-pct" id="pct-sphere">—</span></div>
+  <div class="nav-divider"></div>
+  <div class="nav-item" data-view="vteam"><span class="nav-dot"></span>V-Team</div>
+  <div class="nav-divider"></div>
+  <div class="nav-item" data-view="signals"><span class="nav-dot"></span>Signals</div>
+  <div class="nav-item" data-view="about"><span class="nav-dot"></span>About</div>
+</nav>
+
+<main class="main" id="main"></main>
+
+<input id="output-file-input" type="file" accept="image/*" style="display:none" onchange="handleOutputFile(this)">
+<div id="output-lightbox" onclick="closeOutputLightbox()">
+  <button id="output-lightbox-close" onclick="closeOutputLightbox()">✕</button>
+  <img id="output-lightbox-img" src="" onclick="event.stopPropagation()">
+</div>
+
+<!-- Floating DRI picker -->
+<div id="dri-picker">
+  <div class="dri-search-wrap">
+    <input id="dri-input" type="text" placeholder="Search name…" autocomplete="off" spellcheck="false">
+  </div>
+  <div id="dri-results"></div>
+</div>
+
+<script>
+// ── Team (from Slack) ────────────────────────────────────────────────────────
+const TEAM = [
+  // VP / Directors
+  { userId:'U099ZJA92M7', name:'John Evans',             title:'VP, Head of Design',                           avatar:'https://avatars.slack-edge.com/2025-08-11/9338307931206_b6bfd2f0ca6ee08163a7_original.jpg' },
+  { userId:'U0ANABP34GZ', name:'Diamond Ho',             title:'Director, Design, DashPass',                   avatar:'https://avatars.slack-edge.com/2026-03-26/10784836479222_1ccbedfa8abf42b05682_original.jpg' },
+  { userId:'U043Q2CM2EN', name:'Kara Fong',              title:'Sr. Design Director, Design Foundations',      avatar:'https://avatars.slack-edge.com/2022-10-19/4231050223447_b01ece078e30c1cce86e_original.png' },
+  { userId:'U0AESQAMCSC', name:'Yatir Kaaren',           title:'Design Director, Consumer (Wolt)',             avatar:'https://avatars.slack-edge.com/2026-03-13/10698269644196_c00bd18cb9fb0840cabb_original.jpg' },
+  { userId:'U03DAE30ZPA', name:'Shali Nguyen',           title:'Sr. Design Director, Consumer',                avatar:'https://avatars.slack-edge.com/2022-04-22/3415108333751_2814b38bc30fc604bbfa_original.png' },
+  { userId:'U0A6XA31UQ1', name:'Matej Hrescak',         title:'Director, Design',                             avatar:'https://avatars.slack-edge.com/2026-01-02/10219556408037_b9b9843ab950bd250de8_original.jpg' },
+  { userId:'U04FJ0B2LBF', name:'Jeremy Friedland',      title:'Design Director, New Verticals',               avatar:'https://avatars.slack-edge.com/2022-12-16/4533214785442_2078f3ae564befec4fbf_original.png' },
+  { userId:'U050WJ3U31N', name:'Samiksha Kothari',      title:'Sr. Design Director, Dx',                      avatar:'https://avatars.slack-edge.com/2023-03-27/5019631713444_1e3a833d3d749d61e6a7_original.jpg' },
+  { userId:'U01ELLY0QP3', name:'Elisha Ong',            title:'Design Director',                              avatar:'https://avatars.slack-edge.com/2026-03-02/10598064973175_a8a23ee0405be13113e8_original.jpg' },
+  { userId:'U04GJDXV5FH', name:'Kevin Schaefer',        title:'Design Director',                              avatar:'https://avatars.slack-edge.com/2023-01-02/4587480374628_91ab63a37f02e3f7e25c_original.png' },
+  { userId:'U09BME03013', name:'Dan Sormaz',            title:'Sr. Design Director, Commerce Platform',       avatar:'https://avatars.slack-edge.com/2025-08-24/9403050518310_a1ac62b52510cfe1aa09_original.jpg' },
+  // Design Managers
+  { userId:'U08346SP249', name:'Ruby Lee',              title:'Sr. Manager, Head of Brand & Growth Design',   avatar:'https://avatars.slack-edge.com/2026-02-27/10629079856144_dd57fb632ead1ff0de4c_original.png' },
+  { userId:'U0183PWLZ7D', name:'Ishaan Kansal',         title:'Design Manager, Growth',                       avatar:'https://avatars.slack-edge.com/2021-12-28/2882601084406_a35b09344c1817532a4d_original.png' },
+  { userId:'U080P78PCMV', name:'Qixing Zheng',          title:'Sr. Design Manager, Eatable Moments & Growth', avatar:'https://avatars.slack-edge.com/2024-11-15/8041435067316_c483783ea167fac3f62e_original.png' },
+  { userId:'U07Q9TC55V4', name:'Will Rice',             title:'Design Manager',                               avatar:'https://avatars.slack-edge.com/2024-10-06/7837159460002_1c35badbc3371edf0227_original.jpg' },
+  { userId:'U09AKGYUV6Z', name:'Katya Kostyukova',      title:'Sr. Design Manager, Fulfillment',              avatar:'https://avatars.slack-edge.com/2025-08-18/9359212845543_5c4c517564dc7c00773a_original.png' },
+  { userId:'UHKF33W59',   name:'Ashmita Vishwanathan',  title:'Senior Design Manager',                        avatar:'https://avatars.slack-edge.com/2019-04-15/602717203665_137b9024422175c1ab81_original.png' },
+  { userId:'U0AA6B9K347', name:'Wahiba Bukhari',        title:'Sr. Product Design Manager, Storefront',       avatar:'https://avatars.slack-edge.com/2026-01-23/10361826871958_562ab9a6262a77ef1b95_original.jpg' },
+  { userId:'U02K50M4YPK', name:'Charlotte Wang',        title:'Design Manager, Ordering Experience',          avatar:'https://avatars.slack-edge.com/2024-03-27/6874222391874_b9657d74b06cb8decabd_original.png' },
+  { userId:'U07V3HL7V2B', name:'Miki Setlur',           title:'Sr. Design Manager, CXI',                      avatar:'https://avatars.slack-edge.com/2024-11-11/8014937513028_31537048934738d75298_original.jpg' },
+  { userId:'U09HF4B267L', name:'Lavi Santos',           title:'Sr. Design Manager, Internal Tools',           avatar:'https://avatars.slack-edge.com/2025-10-02/9655848397216_cad2a1c62db8ac75fbdd_original.jpg' },
+  { userId:'U09G804QERK', name:'Leonie Pfalz',          title:'Senior Design Manager (Deliveroo)',             avatar:'https://avatars.slack-edge.com/2026-03-10/10696051216112_40be001c62049548762b_original.jpg' },
+  { userId:'U07K0D1BP55', name:'Jason Beck',            title:'Sr. Group Design Manager (Deliveroo)',          avatar:'https://avatars.slack-edge.com/2024-09-16/7730850591253_34bbd674323f5f8cccf8_original.jpg' },
+  { userId:'U0396TY146A', name:'Priya Kaul',            title:'Sr. Group Design Manager (Deliveroo)',          avatar:'https://avatars.slack-edge.com/2022-04-19/3409038455363_2fa06e036a65194d0737_original.jpg' },
+  { userId:'U03RQNLF7DZ', name:'Erin Scheiner',         title:'Senior Design Manager (Deliveroo)',             avatar:'https://avatars.slack-edge.com/2022-10-03/4180912831153_86f07ade2684b74eb514_original.png' },
+  { userId:'U02P90M54BS', name:'Yuan Gu',               title:'Design Manager',                               avatar:'https://avatars.slack-edge.com/2021-11-29/2781213115187_c8fa9c3a387b384e2cd9_original.jpg' },
+  { userId:'U01D1JTUUJJ', name:'May Wang',              title:'Sr. Design Manager, Drive',                    avatar:'https://avatars.slack-edge.com/2024-04-08/6913786462439_1c22fc406b4ab1659145_original.jpg' },
+  // Design Program Managers
+  { userId:'U09GLR669GR', name:'Ali Patterson',         title:'Staff Design Program Manager',                 avatar:'https://avatars.slack-edge.com/2025-09-25/9582226947314_efe30d1f38781cf9cd9a_original.png' },
+  { userId:'U03FE79B9FC', name:'Randi Robinson',        title:'Staff Design Program Manager',                 avatar:'https://avatars.slack-edge.com/2022-05-16/3544958822177_7b39dfc43a440b75d841_original.jpg' },
+  // Staff / Principal Designers
+  { userId:'U06GZ2C88CS', name:'Dan Shilov',            title:'Staff Product Designer',                       avatar:'https://avatars.slack-edge.com/2025-12-02/10040113562722_7a3d365d1e470cd2b29e_original.jpg' },
+  { userId:'U012BGTAKHQ', name:'Phil Hammel',           title:'Principal Product Designer (Deliveroo)',       avatar:'https://avatars.slack-edge.com/2024-03-12/6798699245377_3bc74508554473eeab9e_original.png' },
+  { userId:'U02AHGH5FT7', name:'Lou Bennett',           title:'Senior Staff Product Designer (Deliveroo)',    avatar:'https://avatars.slack-edge.com/2025-09-04/9459685123973_a98f8d437eef4543b8e3_original.jpg' },
+  { userId:'UMTH3BL2C',   name:'Grant McAllister',      title:'Senior Staff Designer (Deliveroo)',            avatar:'https://avatars.slack-edge.com/2025-10-08/9659743109506_34f1544c88cb3794ae1c_original.png' },
+  { userId:'U01GVQVBVGE', name:'Laura Sotomiranda',     title:'Staff Product Designer (Deliveroo)',           avatar:'https://avatars.slack-edge.com/2025-03-18/8624022620148_6bcf3543cb824b467277_original.jpg' },
+  { userId:'U078W1B9C8G', name:'Ben Child',             title:'Staff Product Designer',                       avatar:'https://avatars.slack-edge.com/2024-06-17/7288086495682_6e200e7c9eea0dd98d3f_original.jpg' },
+  { userId:'U0827UZL30C', name:'Nate Clinton',          title:'Staff Product Designer',                       avatar:'https://avatars.slack-edge.com/2024-11-26/8081353869238_c6818b063b97db2916fb_original.jpg' },
+  { userId:'U05UCALJ3PY', name:'Shawn Terasaki',        title:'Staff Product Designer',                       avatar:'https://avatars.slack-edge.com/2024-04-11/6941778301990_39e794facb8097bc0a9f_original.jpg' },
+  { userId:'U05P6T11QD6', name:'Silas Burton',          title:'Staff Product Designer',                       avatar:'https://avatars.slack-edge.com/2023-08-21/5775691712994_8cdc00cf5809e466a722_original.jpg' },
+  { userId:'U04AHQZ80KX', name:'Sam Szerlip',           title:'Staff Product Designer',                       avatar:'https://avatars.slack-edge.com/2022-11-13/4367275797540_07c6a09c52336819dde9_original.jpg' },
+  { userId:'U0ANWD4QJ1G', name:'Thiago Pires',          title:'Staff Product Designer (Wolt)',                avatar:'https://avatars.slack-edge.com/2026-03-26/10780401584899_0c60fc18a73decc21c6c_original.png' },
+  { userId:'U02FLND0802', name:'Joe Jezowski',          title:'Principal Product Designer',                   avatar:'https://avatars.slack-edge.com/2023-06-26/5485448251730_4a2b40e21f869190d766_original.jpg' },
+  { userId:'U03UB4TEA2U', name:'Rodrigo de Benitosnaz', title:'Staff Product Designer',                       avatar:'https://avatars.slack-edge.com/2022-08-15/3954049085153_e9adc5a2c69b8e052d33_original.jpg' },
+  { userId:'U02AZ47A946', name:'Jeremy Lu',             title:'Staff Product Designer',                       avatar:'https://avatars.slack-edge.com/2025-11-23/9963607411559_dd966429589e292d7ec8_original.png' },
+  { userId:'U02T36LHA4D', name:'Sharon Weng',           title:'Staff Product Designer',                       avatar:'https://avatars.slack-edge.com/2022-01-10/2916286619527_a8922f304b89e9bb4f58_original.jpg' },
+  { userId:'U09M34G3ZEE', name:'Francesco Cutolo',      title:'Design Systems Lead (Wolt)',                   avatar:'https://avatars.slack-edge.com/2026-04-10/10917904387232_a6d0785d9e972ee6b618_original.jpg' },
+  { userId:'U0A3VNG3DFY', name:'Liam Turner',           title:'Design Lead (Wolt)',                           avatar:'https://avatars.slack-edge.com/2026-03-30/10789004511607_1fec12c1794cc0ce78a6_original.jpg' },
+  { userId:'U0AV9DYH3EG', name:'Julia Yu',              title:'Design Lead',                                  avatar:'https://avatars.slack-edge.com/2026-04-28/11010994594645_a88d01af91e70aef53bc_original.jpg' },
+  { userId:'U06361Q4AV8', name:'Tejasvi Desai',         title:'Staff Content Designer',                       avatar:'https://avatars.slack-edge.com/2024-02-07/6627084724144_a3d77f0c2e53cd943866_original.jpg' },
+  { userId:'U06FMKZBMJA', name:'Alan Thomas',           title:'Staff Content Designer (Deliveroo)',           avatar:'https://avatars.slack-edge.com/2024-02-06/6592044199618_98b47e0111715d1c614c_original.jpg' },
+  { userId:'U02K16FB83E', name:'Conni Watson',          title:'Staff Content Designer (Deliveroo)',           avatar:'https://avatars.slack-edge.com/2026-04-14/10905932190021_0911ec7b53d55f53cb3a_original.png' },
+  { userId:'U0AEZFESJRZ', name:'Vanessa Bruno',         title:'Staff Content Designer',                       avatar:'https://avatars.slack-edge.com/2026-02-17/10530735439172_95f4a90a75700313cd4b_original.png' },
+  { userId:'U03M3RJPKTP', name:'Christina Hirst',       title:'Staff Content Designer (Deliveroo)',           avatar:'https://avatars.slack-edge.com/2024-07-18/7443894201043_11439bcce7ac7ec9e3f4_original.png' },
+  { userId:'U03HT8557CZ', name:'Adam Stokes',           title:'Staff Content Designer (Deliveroo)',           avatar:'https://avatars.slack-edge.com/2025-12-01/10029592479284_e1b122f9d9268861f014_original.jpg' },
+  { userId:'U05PAP45X6C', name:'Rachel Hoskins',        title:'Staff Content Designer (Deliveroo)',           avatar:'https://avatars.slack-edge.com/2025-07-28/9286340622288_1e4e9b284aa1f0c871fd_original.png' },
+  // Senior Designers
+  { userId:'U03H2J8QYC8', name:'Brett Killoran',        title:'Senior Design Systems Designer',               avatar:'https://avatars.slack-edge.com/2022-06-15/3678521322724_156c804d702cec90a52d_original.jpg' },
+  { userId:'U08T634P82V', name:'Kitkat Pecson',         title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2026-04-27/11001600811587_00ec9055d1c013ab690d_original.png' },
+  { userId:'U05UXJNAKFB', name:'Loreina Chew',          title:'Senior Design Systems Designer',               avatar:'https://avatars.slack-edge.com/2023-10-04/5990138808885_d06d7be3f3a573a9d830_original.jpg' },
+  { userId:'U03MU4HDXDW', name:'Claire Britt',          title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2022-06-28/3743207529777_d6a93cecdee06f5a6536_original.jpg' },
+  { userId:'U0AFHTHMEMA', name:'David Chan',            title:'Senior Product Designer (Wolt)',               avatar:'https://avatars.slack-edge.com/2026-03-30/10818940282497_cff3e198e49af2f5ccf6_original.jpg' },
+  { userId:'U0AG05PC5EC', name:'Will Paybarah',         title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2026-02-17/10521190451139_c175a2fd8a56fdea3f44_original.png' },
+  { userId:'U05NAHQ7V3Q', name:'Emily Hsiung',          title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2024-04-01/6887254236470_20b88af0177a8c23eb72_original.png' },
+  { userId:'U0AE8PQECAD', name:'Juan Farina',           title:'Senior Product Designer (Wolt)',               avatar:'https://avatars.slack-edge.com/2026-03-24/10773880423668_8b89ec76a75fa6b00e6c_original.png' },
+  { userId:'U09UMDXAE4R', name:'Mauro Castellanos',     title:'Senior Product Designer (Wolt)',               avatar:'https://avatars.slack-edge.com/2026-03-26/10777114884419_c61f6c0b0e9381c56fd0_original.jpg' },
+  { userId:'U0A7MTF2USZ', name:'Alec Bergmann',         title:'Senior Product Designer (Wolt)',               avatar:'https://avatars.slack-edge.com/2026-04-13/10934064520368_8c4b5892d4e6cd0bb6a4_original.png' },
+  { userId:'U074M4LU7SB', name:'Brian Wong',            title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2024-05-28/7186809522562_9aff6428ef47ba8dd679_original.png' },
+  { userId:'U06ERR99HKM', name:'Tiff Taimoorazy',       title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2024-01-23/6518293355779_df50fe2d7904ebac66c3_original.png' },
+  { userId:'U08QHPQKBML', name:'Anna Western',          title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2025-05-05/8834721167815_d408ca193eecd7939124_original.jpg' },
+  { userId:'U08K504K7RP', name:'Tony Nguyen',           title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2025-03-24/8647504263557_2fd1815f7387d2f3dd28_original.jpg' },
+  { userId:'U08J47JQF1P', name:'Robyn Goodridge',       title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2025-03-17/8625077543745_a93281b73d043d6fdc6e_original.jpg' },
+  { userId:'U04EKUATMM0', name:'Archit Jha',            title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2022-12-14/4518620148659_7b0198810b5e8c8c0ca9_original.png' },
+  { userId:'U04E8L66UHE', name:'Lucy Qi',               title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2022-12-06/4477957019602_528a08bbb708ced25b8a_original.png' },
+  { userId:'U022P4MKFJL', name:'Yunyu Zhou',            title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2026-02-04/10472762850272_ab65f5a562266f1acf47_original.png' },
+  { userId:'U02GE608FLK', name:'Gerardo Torres',        title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2021-10-21/2636246787732_fb25fdce6adedeab6271_original.jpg' },
+  { userId:'U06TXEABQMC', name:'Mandy Thao',            title:'Senior Product Designer',                      avatar:'https://avatars.slack-edge.com/2024-04-16/6956854856279_9fd2a4956696b18650bd_original.jpg' },
+  { userId:'U0AMBL4AJHW', name:'Jisu Choi',             title:'Senior Product Designer, People Product',      avatar:'https://avatars.slack-edge.com/2026-03-16/10714933687298_c20d0e247571f7c3ec57_original.jpg' },
+  { userId:'U02JSCAV68J', name:'Matthew Burg',          title:'Senior Design Systems Designer',               avatar:'https://avatars.slack-edge.com/2026-02-23/10579271470993_a42033a24cfcfcef5bbe_original.jpg' },
+  { userId:'U03MMK0KV1D', name:'Lauren Miller',         title:'Senior Design Systems Designer',               avatar:'https://avatars.slack-edge.com/2022-07-05/3746060223767_962f4a11d2c21727a394_original.jpg' },
+  { userId:'U0AFENV9P8A', name:'Pelle Elander Wisten',  title:'Senior Product Designer, Merchant (Wolt)',     avatar:'https://avatars.slack-edge.com/2026-03-31/10833033679793_39c18def64ee6b99116d_original.jpg' },
+  { userId:'U09NEUWBWAW', name:'Rodrigo Fortes',        title:'Senior Product Designer, Design Systems (Wolt)',avatar:'https://avatars.slack-edge.com/2026-04-13/10904614072452_769e91d4a9d5c67d939b_original.jpg' },
+  { userId:'U0AEDAK80QJ', name:'Linea Högberg',         title:'Senior Design System Designer (Wolt)',         avatar:'https://avatars.slack-edge.com/2026-04-07/10858297599301_485782118c5504aa9b90_original.jpg' },
+  { userId:'UUQMDBFC1',   name:'Eva Edgren',            title:'Sr. Brand Designer',                           avatar:'https://avatars.slack-edge.com/2026-03-19/10737568348070_2fdfa784dc99db7cbb3b_original.png' },
+  { userId:'U06JEDBQTGC', name:'Avalon Murray',         title:'Senior Brand Designer',                        avatar:'https://avatars.slack-edge.com/2024-02-13/6618085298231_a2d41a86064a4b2b0910_original.jpg' },
+  { userId:'U089W0G5Z5E', name:'Sasha Mills',           title:'Senior Designer, Growth',                      avatar:'https://avatars.slack-edge.com/2025-01-21/8329391820036_a3293074168818a2f36b_original.jpg' },
+  { userId:'U09AF8ZPP3M', name:'Cayla Dorsey',          title:'Senior Content Designer',                      avatar:'https://avatars.slack-edge.com/2025-08-18/9368562293813_b79f15b96ed0b4351624_original.jpg' },
+  { userId:'U09T5QMFRJ8', name:'Corrine Aberdeen',      title:'Senior Content Designer',                      avatar:'https://avatars.slack-edge.com/2025-11-17/9929807338579_d7df52508aa56ca4786f_original.jpg' },
+  { userId:'U07GWJKFGP3', name:'Flavia Schiavon',       title:'Senior Content Designer',                      avatar:'https://avatars.slack-edge.com/2024-08-12/7556483900230_82e866e1cc370fed56ad_original.jpg' },
+  { userId:'U0APY2H97DY', name:'Crystal Yu',            title:'Senior Content Designer (Wolt)',               avatar:'https://avatars.slack-edge.com/2026-04-02/10863683645408_d629200dc07d8fd143e6_original.png' },
+  { userId:'U01G2DKN5BK', name:'Jay Castro',            title:'Senior Content Designer',                      avatar:'https://avatars.slack-edge.com/2020-12-01/1537895796005_c30028bd9f6d27cbba98_original.jpg' },
+  { userId:'U046LQJPCP5', name:'Lena Rankin',           title:'Senior Content Designer',                      avatar:'https://avatars.slack-edge.com/2022-10-17/4233497461395_a7609083f6c933dcabcb_original.jpg' },
+  // Designers
+  { userId:'U086SHH965V', name:'Andres Garcia',         title:'Design Systems Designer',                      avatar:'https://avatars.slack-edge.com/2025-01-06/8278047847312_64b184dccec6c894a5a0_original.jpg' },
+  { userId:'U07J813FHA9', name:'Graeme Smith',          title:'Product Designer',                             avatar:'https://avatars.slack-edge.com/2024-08-24/7610743415319_20e8ff736b2a973cb896_original.jpg' },
+  { userId:'U02SQBY5JQZ', name:'Julia Doan',            title:'Product Designer',                             avatar:'https://avatars.slack-edge.com/2022-01-04/2901995041558_d770977df5abfd3fb383_original.png' },
+  { userId:'U0423112NQK', name:'Salonee Gupta',         title:'Product Designer',                             avatar:'https://avatars.slack-edge.com/2023-10-09/6034765437584_4c27ee0e23702edb95ef_original.jpg' },
+  { userId:'U092DLP9QAY', name:'Nelly Shih',            title:'Product Designer',                             avatar:'https://avatars.slack-edge.com/2025-06-23/9091461011170_9523a861fe2068f3d095_original.png' },
+  { userId:'U084UHQRQBG', name:'Alicia Ng',             title:'Product Designer',                             avatar:'https://avatars.slack-edge.com/2024-12-17/8211310824608_7ab0366ca72b589c05d5_original.jpg' },
+  { userId:'U07HACPBCN7', name:'Matt Fang',             title:'Product Designer',                             avatar:'https://avatars.slack-edge.com/2025-07-11/9183838425190_b842dd23b669c0d312d0_original.png' },
+  { userId:'U07MRMSBS2V', name:'Bonnie Lee',            title:'Product Designer',                             avatar:'https://avatars.slack-edge.com/2024-09-13/7728503694611_f5224eeaf128019d2cd4_original.jpg' },
+  { userId:'U0AETDPCWSG', name:'Bohdan Pshenychnyi',    title:'Product Designer (Wolt)',                      avatar:'https://avatars.slack-edge.com/2026-04-14/10912279311702_c014f553c8f800b9a219_original.jpg' },
+  { userId:'U0AF7KCGE5N', name:'Justas Karnickas',      title:'Product Designer (Wolt)',                      avatar:'https://avatars.slack-edge.com/2026-04-13/10898782501014_e8b5dd02887eab955cb2_original.png' },
+  { userId:'U07H3SY1VB8', name:'Arina Romanova',        title:'Product Designer',                             avatar:'https://avatars.slack-edge.com/2024-08-19/7596205920067_78bcc6713049fddfda13_original.png' },
+  { userId:'U07F7QV4X1C', name:'Fiona Crombie',         title:'Product Designer (Deliveroo)',                 avatar:'https://avatars.slack-edge.com/2024-10-03/7808597134983_2f7c912205ec71f8a7a2_original.png' },
+  { userId:'U0261NUAFRU', name:'Rachel He',             title:'Product Designer',                             avatar:'https://avatars.slack-edge.com/2025-10-30/9793770537079_9323c7ad84a5d85bdc31_original.png' },
+  { userId:'UEPK6L3R6',   name:'Greg Mathews',          title:'Product Designer',                             avatar:'https://avatars.slack-edge.com/2025-04-28/8815272043973_43abfe3495241feb77f9_original.jpg' },
+  { userId:'U08SCSF8F2B', name:'Calum Wagner',          title:'Product Designer',                             avatar:'https://avatars.slack-edge.com/2025-05-19/8913933209286_53b1dadfbe082a0dbeca_original.png' },
+  { userId:'U0ANGNH9ZU2', name:'Mario Rocchi',          title:'Product Designer (Wolt)',                      avatar:'https://avatars.slack-edge.com/2026-04-07/10860011400550_df7bf1effc3774359165_original.png' },
+  { userId:'U0ANABRQD9R', name:'Jessica Koh',           title:'Product Designer (Wolt)',                      avatar:'https://avatars.slack-edge.com/2026-03-31/10812633487395_b61c747ac0eef3aca52a_original.jpg' },
+  { userId:'U09RM3G4FQR', name:'Ralph Theodori',        title:'Product Designer, Self Delivery (Wolt)',       avatar:'https://avatars.slack-edge.com/2026-04-13/10901027119430_d77cda898501b7c16032_original.jpg' },
+  { userId:'U09JQTEHYQL', name:'Bailey Morgan',         title:'Content Designer',                             avatar:'https://avatars.slack-edge.com/2025-10-06/9645609458838_1df9aab37cd7072b33d4_original.jpg' },
+  { userId:'U0AFK8RDPT7', name:'Steven Baguley',        title:'Content Designer (Wolt)',                      avatar:'https://avatars.slack-edge.com/2026-03-26/10782280427365_1a3ac721dbb3f98146af_original.jpg' },
+  { userId:'U080SU317LG', name:'Jen Lee',               title:'Content Designer',                             avatar:'https://avatars.slack-edge.com/2024-11-11/8012714861650_5387ad958984795a0dbe_original.png' },
+  { userId:'U0AJM08S63H', name:'Jimmy Vongsamphanh',    title:'Brand Designer',                               avatar:'https://avatars.slack-edge.com/2026-03-09/10655112032067_5d3ba4bb7d69f92e820a_original.png' },
+  { userId:'U08D18U0UAC', name:'Kaylee Reynolds',       title:'Designer, Growth',                             avatar:'https://avatars.slack-edge.com/2025-07-06/9142056957799_c9ef73b2c24f679c92f1_original.png' },
+  { userId:'UQ18LGSGL',   name:'Julio Sotomayor',       title:'Sr. Graphic Designer',                         avatar:'https://avatars.slack-edge.com/2025-02-21/8493662073682_44e2c574e52b64e58f22_original.png' },
+]
+
+// ── Dims ─────────────────────────────────────────────────────────────────────
+const DIMS = [
+  {
+    key:'show', name:'Show', subtitle:'Social and web', color:'var(--show)',
+    mission:'Build a consistent, honest public identity for Studio. Give the design community a steady view into how we think and work — real craft signal, not polished marketing.',
+    outputs:[
+      { id:'show-website',  title:'Studio website',          defaultMission:'One public home for Studio — the values we hold, the work we ship, and the people who make it. The URL we send when someone asks who we are. This is our most permanent signal: a place that exists and accumulates over time, not a post that disappears in a feed.' },
+      { id:'show-portfolio',title:'Portfolio & case studies', defaultMission:'Publicly accessible deep-dives on shipped work. Show the real constraints, the real tradeoffs, and how we got to the final decision. This is what separates Studio from studios that only post final screens — we show the thinking.' },
+      { id:'show-comms',    title:'External communications',  defaultMission:'A steady cadence of substantive content across LinkedIn, our blog, and any channel where designers look. Regular posts, longer essays, newsletters. Not a brand campaign — designers writing honestly about the work they\'re doing.' },
+    ],
+  },
+  {
+    key:'stage', name:'Stage', subtitle:'Talks and events', color:'var(--stage)',
+    mission:'Earn Studio\'s place in conversations that shape the design industry. Conferences, podcasts, and events we host ourselves — showing how we approach hard problems at scale.',
+    outputs:[
+      { id:'stage-media',  title:'Podcast & media',          defaultMission:'Show up in the conversations the design community is already having. Guest appearances on design podcasts, video content, and press coverage. Aim for depth over reach — one substantive conversation is worth more than five brand mentions.' },
+      { id:'stage-conf',   title:'Conference talks',         defaultMission:'Earn speaking slots at the events that shape our industry — Config, SXSW, design weeks, and others. Submit strong CFPs, prepare talks worth traveling to hear, and represent Studio on stage in a way that opens doors for everyone who follows.' },
+      { id:'stage-hosted', title:'Studio-hosted events',     defaultMission:'Run events entirely on our terms. Workshops, panels, and roundtables where we set the agenda — at major conferences or in our own space. Hosting inverts the dynamic: instead of pitching to get a slot, we create the room.' },
+    ],
+  },
+  {
+    key:'sphere', name:'Sphere', subtitle:'Meet people and hire', color:'var(--sphere)',
+    mission:'Build the network Studio needs to hire exceptionally well and stay genuinely connected to the design community — across brands, geographies, and career stages.',
+    outputs:[
+      { id:'sphere-community', title:'Community gatherings', defaultMission:'Be present where designers already meet. Happy hours near conferences, informal meetups, and the low-stakes moments where real relationships form. These are the conversations that lead to referrals, collaborations, and trust — none of which happen in a job posting.' },
+      { id:'sphere-talent',    title:'Talent pipeline',      defaultMission:'Meet future Studio designers before they\'re looking. Portfolio reviews, campus programs, and hiring events where Studio becomes a name designers recognise — and aspire to. The best hires often come from relationships that started long before a role opened.' },
+      { id:'sphere-orgs',      title:'Org partnerships',     defaultMission:'Build durable connections with communities outside Studio — design orgs, schools, and collectives we can grow alongside over years. These aren\'t sponsorships or one-off activations; they\'re relationships where both sides show up consistently.' },
+    ],
+  },
+]
+
+const DIM_MAP  = {}; DIMS.forEach(d => { DIM_MAP[d.key] = d })
+const AREA_MAP = {}; DIMS.forEach(d => d.outputs.forEach(o => { AREA_MAP[o.id] = { ...o, dimKey:d.key, dimName:d.name } }))
+
+// ── Firebase ─────────────────────────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+  apiKey:            "REPLACE_ME",
+  authDomain:        "REPLACE_ME.firebaseapp.com",
+  projectId:         "REPLACE_ME",
+  storageBucket:     "REPLACE_ME.appspot.com",
+  messagingSenderId: "REPLACE_ME",
+  appId:             "REPLACE_ME"
+}
+let db, DOC, _remoteListenerActive = false
+try {
+  firebase.initializeApp(FIREBASE_CONFIG)
+  db  = firebase.firestore()
+  DOC = db.collection('studio').doc('presence')
+} catch(e) { console.warn('Firebase init failed (config not set?):', e) }
+
+// ── State ────────────────────────────────────────────────────────────────────
+const KEY = 'studiopresence-tracker-v4'
+function defaultState() {
+  return { v:4, milestones:[], missions:{}, dimOwners:{}, areaOwners:{}, summary:null, updatedAt:null }
+}
+let state = defaultState()
+// Warm-start from localStorage so the UI isn't blank while Firestore loads
+try {
+  const raw = localStorage.getItem(KEY)
+  if (raw) { const p = JSON.parse(raw); if (p.v === 4) state = { ...defaultState(), ...p } }
+} catch(e) {}
+// Fetch live state then subscribe to real-time updates
+if (DOC) {
+  DOC.get().then(snap => {
+    if (snap.exists()) {
+      const p = snap.data()
+      if (p.v === 4) { state = { ...defaultState(), ...p }; render() }
+    }
+    if (!_remoteListenerActive) {
+      _remoteListenerActive = true
+      DOC.onSnapshot(snap => {
+        if (!snap.exists()) return
+        const p = snap.data()
+        if (p.v === 4 && p.updatedAt !== state.updatedAt) { state = { ...defaultState(), ...p }; render() }
+      })
+    }
+  }).catch(e => console.warn('Firestore load failed, using local state:', e))
+}
+function save() {
+  state.updatedAt = Date.now()
+  localStorage.setItem(KEY, JSON.stringify(state))
+  if (DOC) DOC.set(state).catch(e => console.warn('Firestore write failed:', e))
+}
+
+// ── Router ───────────────────────────────────────────────────────────────────
+let view = 'dashboard'
+function navigate(v) { view = v; render() }
+document.getElementById('sidebar').addEventListener('click', e => {
+  const item = e.target.closest('.nav-item')
+  if (item && item.dataset.view) navigate(item.dataset.view)
+})
+
+// ── Utils ────────────────────────────────────────────────────────────────────
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7) }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+function today() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` }
+function dateToYM(ds) { return ds ? ds.slice(0,7) : '' }
+function formatMonth(ym) { if(!ym) return ''; const [y,m]=ym.split('-').map(Number); return `${['January','February','March','April','May','June','July','August','September','October','November','December'][m-1]} ${y}` }
+function formatDate(ds) {
+  if(!ds) return ''; const [y,m,d]=ds.split('-').map(Number)
+  const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]
+  return `${mn} ${d}${y!==new Date().getFullYear()?` '${String(y).slice(2)}`:''}`
+}
+function progressClass(p) { if(p<=0) return 'p-zero'; if(p>=100) return 'p-done'; return 'p-doing' }
+function initials(name) { return name.split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase() }
+
+const CHECK_SVG = `<svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+const PLUS_SVG  = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`
+const USER_SVG  = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="3.5" r="2.2" stroke="currentColor" stroke-width="1.2"/><path d="M1 10c0-2.2 2-3.5 4.5-3.5S10 7.8 10 10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`
+const IMAGE_SVG  = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1.5" width="9" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="3.8" cy="4.3" r="1" stroke="currentColor" stroke-width="1"/><path d="M1 8l2.5-2.5 2 2 1.5-2 2.5 2.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+const PENCIL_SVG = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7.5 1.5l2 2L3 10H1v-2L7.5 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+
+// ── DRI chip HTML ─────────────────────────────────────────────────────────────
+function getDri(mapKey, id) {
+  const map = mapKey === 'dim' ? state.dimOwners : state.areaOwners
+  const val = map[id]
+  if (!val) return null
+  if (typeof val === 'string') return { name: val, avatar: null }
+  return val
+}
+
+function avatarWrapHTML(avatar, name, size = 20) {
+  const ini = initials(name)
+  if (avatar) {
+    return `<span class="dri-avatar-wrap" style="width:${size}px;height:${size}px">
+      <img src="${esc(avatar)}" style="width:${size}px;height:${size}px" onerror="this.parentNode.classList.add('img-err')" loading="lazy">
+      <span class="dri-initials-pill" style="width:${size}px;height:${size}px">${ini}</span>
+    </span>`
+  }
+  return `<span class="dri-initials-pill" style="width:${size}px;height:${size}px;flex-shrink:0">${ini}</span>`
+}
+
+function driChipHTML(id, mapKey) {
+  const dri = getDri(mapKey, id)
+  if (!dri) {
+    return `<span class="dri-chip" data-dri-id="${esc(id)}" data-dri-map="${mapKey}">${USER_SVG}<span>Add DRI</span></span>`
+  }
+  return `<span class="dri-chip has-dri" data-dri-id="${esc(id)}" data-dri-map="${mapKey}">
+    ${avatarWrapHTML(dri.avatar, dri.name, 20)}
+    <span>${esc(dri.name)}</span>
+  </span>`
+}
+
+// ── Floating DRI picker ───────────────────────────────────────────────────────
+let _dri = null // { id, mapKey }
+
+function openDriPicker(id, mapKey, chipEl) {
+  _dri = { id, mapKey }
+  const picker = document.getElementById('dri-picker')
+  const input  = document.getElementById('dri-input')
+  const rect   = chipEl.getBoundingClientRect()
+
+  // Position: prefer below, flip up if too close to bottom
+  let top = rect.bottom + 6
+  if (top + 300 > window.innerHeight) top = rect.top - 306
+  let left = rect.left
+  if (left + 295 > window.innerWidth) left = window.innerWidth - 300
+
+  picker.style.top  = top + 'px'
+  picker.style.left = left + 'px'
+  picker.style.display = 'block'
+
+  const cur = getDri(mapKey, id)
+  input.value = cur ? cur.name : ''
+  renderDriResults(input.value)
+  setTimeout(() => { input.focus(); input.select() }, 30)
+}
+
+function renderDriResults(query) {
+  const q = query.toLowerCase().trim()
+  const filtered = q ? TEAM.filter(p => p.name.toLowerCase().includes(q)) : TEAM
+  const cur = _dri ? getDri(_dri.mapKey, _dri.id) : null
+  let html = ''
+
+  if (filtered.length === 0) {
+    html = `<div class="dri-no-results">No match — press Enter to use "${esc(query)}"</div>`
+  } else {
+    html = filtered.slice(0, 7).map(p =>
+      `<div class="dri-result" onclick="selectDri('${esc(p.userId)}')">
+        <span class="dri-result-avatar-wrap" style="width:28px;height:28px">
+          <img src="${esc(p.avatar)}" style="width:28px;height:28px" onerror="this.parentNode.classList.add('img-err')" loading="lazy">
+          <span class="dri-initials-pill" style="width:28px;height:28px;font-size:.62rem">${initials(p.name)}</span>
+        </span>
+        <div class="dri-result-info">
+          <div class="dri-result-name">${esc(p.name)}</div>
+          <div class="dri-result-title">${esc(p.title)}</div>
+        </div>
+      </div>`
+    ).join('')
+  }
+
+  if (cur) {
+    html += `<div class="dri-result dri-result--clear" onclick="clearDri()">
+      <span class="dri-result-clear-icon">✕</span>
+      <div class="dri-result-info"><div class="dri-result-name" style="color:#b03030">Remove DRI</div></div>
+    </div>`
+  }
+
+  document.getElementById('dri-results').innerHTML = html
+}
+
+function selectDri(userId) {
+  const person = TEAM.find(p => p.userId === userId)
+  if (!person || !_dri) return
+  const map = _dri.mapKey === 'dim' ? state.dimOwners : state.areaOwners
+  map[_dri.id] = { name: person.name, avatar: person.avatar, userId: person.userId, title: person.title }
+  save()
+  closeDriPicker()
+  render()
+}
+
+function selectDriFree(name) {
+  if (!name.trim() || !_dri) return
+  const map = _dri.mapKey === 'dim' ? state.dimOwners : state.areaOwners
+  map[_dri.id] = { name: name.trim(), avatar: null }
+  save()
+  closeDriPicker()
+  render()
+}
+
+function clearDri() {
+  if (!_dri) return
+  const map = _dri.mapKey === 'dim' ? state.dimOwners : state.areaOwners
+  delete map[_dri.id]
+  save()
+  closeDriPicker()
+  render()
+}
+
+function closeDriPicker() {
+  document.getElementById('dri-picker').style.display = 'none'
+  _dri = null
+}
+
+// ── Milestone outputs ─────────────────────────────────────────────────────────
+const _outputOpen = new Set()
+let _outputTargetId = null
+
+function toggleMsOutput(msId) {
+  const sec = document.getElementById('mso-' + msId)
+  if (_outputOpen.has(msId)) { _outputOpen.delete(msId); if (sec) sec.classList.remove('open') }
+  else                        { _outputOpen.add(msId);    if (sec) sec.classList.add('open')    }
+}
+
+function attachOutput(msId) {
+  _outputTargetId = msId
+  document.getElementById('output-file-input').click()
+}
+
+function handleOutputFile(input) {
+  const msId = _outputTargetId
+  const ms = state.milestones.find(x => x.id === msId)
+  if (!ms || !input.files[0]) { input.value = ''; return }
+  const file = input.files[0]
+  input.value = ''
+  const reader = new FileReader()
+  reader.onload = e => {
+    if (!ms.outputs) ms.outputs = []
+    ms.outputs.push({ id: uid(), dataUrl: e.target.result, name: file.name })
+    _outputOpen.add(msId)
+    save(); render()
+  }
+  reader.readAsDataURL(file)
+}
+
+function removeOutput(msId, outputId) {
+  const ms = state.milestones.find(x => x.id === msId)
+  if (!ms) return
+  ms.outputs = (ms.outputs || []).filter(o => o.id !== outputId)
+  save(); render()
+}
+
+function previewOutput(dataUrl) {
+  document.getElementById('output-lightbox-img').src = dataUrl
+  document.getElementById('output-lightbox').classList.add('open')
+}
+
+function closeOutputLightbox() {
+  document.getElementById('output-lightbox').classList.remove('open')
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeOutputLightbox()
+})
+
+let _driDeleting = false
+document.getElementById('dri-input').addEventListener('keydown', e => {
+  _driDeleting = e.key === 'Backspace' || e.key === 'Delete'
+  if (e.key === 'Escape') { e.preventDefault(); closeDriPicker() }
+  if (e.key === 'Tab' || e.key === 'ArrowRight') {
+    const input = e.target
+    if (input.selectionStart < input.selectionEnd) {
+      e.preventDefault()
+      input.setSelectionRange(input.value.length, input.value.length)
+      renderDriResults(input.value)
+      return
+    }
+  }
+  if (e.key === 'Enter') {
+    const q = e.target.value.trim()
+    const match = TEAM.find(p => p.name.toLowerCase() === q.toLowerCase())
+    if (match) selectDri(match.userId)
+    else if (q) selectDriFree(q)
+  }
+})
+document.getElementById('dri-input').addEventListener('input', e => {
+  const q = e.target.value
+  renderDriResults(q)
+  if (!_driDeleting && q.length > 0) {
+    const match = TEAM.find(p => p.name.toLowerCase().startsWith(q.toLowerCase()))
+    if (match) {
+      e.target.value = match.name
+      e.target.setSelectionRange(q.length, match.name.length)
+    }
+  }
+})
+
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.dri-chip')
+  const picker = document.getElementById('dri-picker')
+  if (chip) {
+    e.stopPropagation()
+    openDriPicker(chip.dataset.driId, chip.dataset.driMap, chip)
+    return
+  }
+  if (picker.style.display !== 'none' && !picker.contains(e.target)) closeDriPicker()
+})
+
+// ── Milestone helpers ─────────────────────────────────────────────────────────
+function areaAvgProgress(areaId) {
+  const ms = state.milestones.filter(m => m.area === areaId)
+  return ms.length ? Math.round(ms.reduce((s,m) => s + m.progress, 0) / ms.length) : null
+}
+function dimAvgProgress(dimKey) {
+  const ms = state.milestones.filter(m => m.dim === dimKey)
+  return ms.length ? Math.round(ms.reduce((s,m) => s + m.progress, 0) / ms.length) : null
+}
+
+function progressPillHTML(msId, progress) {
+  const pc = progressClass(progress)
+  return `<span class="ms-progress ${pc}" onclick="editProgress('${msId}', this)">${progress >= 100 ? 'Done' : progress + '%'}</span>`
+}
+
+function msRowHTML(ms, opts = {}) {
+  const pc = progressClass(ms.progress)
+  const isEditable = opts.editable !== false
+  const areaInfo = AREA_MAP[ms.area]
+  const outputs = ms.outputs || []
+  const isOutputOpen = _outputOpen.has(ms.id)
+  const dri = opts.showDri ? (state.areaOwners[ms.area] || state.dimOwners[ms.dim] || null) : null
+
+  const thumbsHTML = outputs.map(o =>
+    `<div class="ms-output-thumb-wrap">
+      <img src="${esc(o.dataUrl)}" class="ms-output-thumb" onclick="previewOutput('${esc(o.dataUrl)}')" title="${esc(o.name)}">
+      ${isEditable ? `<button class="ms-output-remove" onclick="removeOutput('${ms.id}','${o.id}')">✕</button>` : ''}
+    </div>`
+  ).join('')
+
+  const showOutputAffordance = isEditable || outputs.length > 0
+  const outputSection = showOutputAffordance
+    ? `<div class="ms-output-section${isOutputOpen ? ' open' : ''}" id="mso-${ms.id}">
+        <div class="ms-output-section-lbl">Output</div>
+        <div class="ms-output-thumbs">
+          ${thumbsHTML}
+          ${isEditable ? `<button class="ms-output-attach" onclick="attachOutput('${ms.id}')">${PLUS_SVG} Attach</button>` : ''}
+        </div>
+      </div>`
+    : ''
+
+  const outputBtn = showOutputAffordance
+    ? `<button class="ms-output-btn${outputs.length ? ' has-outputs' : ''}" onclick="toggleMsOutput('${ms.id}')" title="Output">
+        ${IMAGE_SVG}${outputs.length ? `<span class="ms-output-count">${outputs.length}</span>` : ''}
+      </button>`
+    : ''
+
+  return `<div class="ms-block">
+    <div class="ms-row ${pc}">
+      <div class="ms-circle" onclick="toggleMsDone('${ms.id}')">${ms.progress >= 100 ? CHECK_SVG : ''}</div>
+      <span class="ms-label${isEditable?' editable':''}"${isEditable?` onclick="startMsEdit('${ms.id}', this)"`:''}>
+        ${esc(ms.label)}</span>
+      ${opts.showArea && areaInfo ? `<span class="ms-area-tag">${esc(areaInfo.title)}</span>` : ''}
+      ${dri ? avatarWrapHTML(dri.avatar, dri.name, 18) : ''}
+      <span class="ms-date-tag">${formatDate(ms.date)}</span>
+      ${progressPillHTML(ms.id, ms.progress)}
+      ${outputBtn}
+      ${isEditable ? `<button class="ms-delete" onclick="deleteMs('${ms.id}')" title="Remove">✕</button>` : ''}
+    </div>
+    ${outputSection}
+  </div>`
+}
+
+function toggleMsDone(msId) {
+  const ms = state.milestones.find(x => x.id === msId)
+  if (!ms) return
+  ms.progress = ms.progress >= 100 ? 0 : 100
+  save(); render()
+}
+
+function editProgress(msId, pillEl) {
+  const ms = state.milestones.find(x => x.id === msId)
+  if (!ms) return
+  const input = document.createElement('input')
+  input.type = 'text'; input.inputMode = 'numeric'
+  input.value = ms.progress; input.className = 'ms-progress-input'
+  pillEl.replaceWith(input); input.focus(); input.select()
+  function commit() {
+    let val = parseInt(input.value, 10)
+    if (isNaN(val)) val = ms.progress
+    ms.progress = Math.max(0, Math.min(100, val))
+    save(); render()
+  }
+  input.addEventListener('blur', commit)
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur() }
+    if (e.key === 'Escape') { input.removeEventListener('blur', commit); render() }
+  })
+}
+
+function openAddForm(areaId) {
+  const form = document.getElementById('form-' + areaId)
+  const btn  = document.getElementById('addbtn-' + areaId)
+  if (!form || !btn) return
+  btn.style.display = 'none'; form.classList.add('visible')
+  const inp = document.getElementById('fi-' + areaId)
+  if (inp) { inp.value = ''; setTimeout(() => inp.focus(), 30) }
+  const di = document.getElementById('fd-' + areaId)
+  if (di) di.value = today()
+}
+
+function closeAddForm(areaId) {
+  const form = document.getElementById('form-' + areaId)
+  const btn  = document.getElementById('addbtn-' + areaId)
+  if (form) form.classList.remove('visible')
+  if (btn)  btn.style.display = ''
+}
+
+function saveMilestone(dimKey, areaId) {
+  const inp = document.getElementById('fi-' + areaId)
+  const di  = document.getElementById('fd-' + areaId)
+  const label = inp ? inp.value.trim() : ''
+  if (!label) { inp && inp.focus(); return }
+  state.milestones.push({ id: uid(), dim: dimKey, area: areaId, label, date: (di&&di.value) ? di.value : today(), progress: 0 })
+  save(); render()
+}
+
+function deleteMs(msId) {
+  state.milestones = state.milestones.filter(m => m.id !== msId)
+  save(); render()
+}
+
+function startMsEdit(msId, el) {
+  if (el.contentEditable === 'true') return
+  const ms = state.milestones.find(x => x.id === msId)
+  if (!ms) return
+  const orig = ms.label
+  el.contentEditable = 'true'; el.classList.add('is-editing'); el.focus()
+  const range = document.createRange(); range.selectNodeContents(el)
+  window.getSelection().removeAllRanges(); window.getSelection().addRange(range)
+  function commit() {
+    el.contentEditable = 'false'; el.classList.remove('is-editing')
+    const text = el.textContent.trim()
+    if (text) { ms.label = text; save() } else el.textContent = orig
+  }
+  el.onblur = commit
+  el.onkeydown = e => {
+    if (e.key === 'Enter') { e.preventDefault(); el.blur() }
+    if (e.key === 'Escape') { el.textContent = orig; el.blur() }
+  }
+}
+
+function bindMissionEdit(el, areaId, defaultText) {
+  el.addEventListener('blur', () => {
+    const text = el.textContent.trim()
+    if (text && text !== defaultText) state.missions[areaId] = text
+    else { delete state.missions[areaId]; if (!text) el.textContent = defaultText }
+    save()
+  })
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { el.textContent = state.missions[areaId] || defaultText; el.blur() }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); el.blur() }
+  })
+}
+
+function focusMission(areaId) {
+  const el = document.querySelector(`.people-mission-edit[data-area-id="${areaId}"]`)
+  if (!el) return
+  el.focus()
+  const range = document.createRange(); range.selectNodeContents(el)
+  window.getSelection().removeAllRanges(); window.getSelection().addRange(range)
+}
+
+// ── AI Summary ────────────────────────────────────────────────────────────────
+const AI_KEY_STORE = 'sp-ai-key'
+
+function buildSummaryPrompt() {
+  const months = [...new Set(state.milestones.map(m => dateToYM(m.date)).filter(Boolean))].sort()
+  if (!months.length) return null
+
+  let lines = [`Studio Presence — milestone status as of ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`, '']
+
+  DIMS.forEach(d => {
+    const ms = state.milestones.filter(m => m.dim === d.key)
+    if (!ms.length) { lines.push(`${d.name}: No milestones added yet`); return }
+    const avg = Math.round(ms.reduce((s,m) => s + m.progress, 0) / ms.length)
+    lines.push(`${d.name} (avg ${avg}%):`)
+    ms.forEach(m => {
+      const area = AREA_MAP[m.area]
+      const dri  = getDri('area', m.area)
+      lines.push(`  - [${m.progress}%] ${m.label} (due ${formatDate(m.date)}, area: ${area ? area.title : m.area}${dri ? ', DRI: '+dri.name : ''})`)
+    })
+  })
+
+  return lines.join('\n')
+}
+
+async function generateSummary(forceKey) {
+  let apiKey = forceKey || localStorage.getItem(AI_KEY_STORE)
+  if (!apiKey) {
+    renderSummaryKeyPrompt()
+    return
+  }
+  localStorage.setItem(AI_KEY_STORE, apiKey)
+
+  const prompt = buildSummaryPrompt()
+  if (!prompt) return
+
+  // Show loading
+  state.summary = { text: null, generatedAt: null, loading: true }
+  renderSummaryCard()
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 220,
+        system: `You summarize progress for Studio, a cross-brand design organization spanning DoorDash, Wolt, and Roo. The Studio Presence program tracks three dimensions: Show (external content), Stage (talks/events), and Sphere (community/hiring). Write a crisp 3–4 sentence briefing paragraph — plain prose, no bullets. Flag what's on track, what needs attention, and any patterns you notice. Be specific about progress where it's meaningful.`,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    })
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      if (res.status === 401) {
+        localStorage.removeItem(AI_KEY_STORE)
+        state.summary = { error: 'Invalid API key. Click to re-enter.', generatedAt: null }
+      } else {
+        state.summary = { error: `API error: ${err.error?.message || res.status}`, generatedAt: null }
+      }
+      renderSummaryCard(); return
+    }
+
+    const data = await res.json()
+    const text = data.content?.[0]?.text || ''
+    state.summary = { text, generatedAt: Date.now(), loading: false }
+    save()
+  } catch(e) {
+    state.summary = { error: 'Network error. Check console.', generatedAt: null }
+  }
+  renderSummaryCard()
+}
+
+function renderSummaryKeyPrompt() {
+  const card = document.getElementById('summary-card')
+  if (!card) return
+  card.innerHTML = `
+    <div class="summary-card__header">
+      <span class="summary-card__spark">✦</span>
+      <span class="summary-card__label">AI Summary</span>
+    </div>
+    <div class="summary-key-row">
+      <input class="summary-key-input" id="api-key-input" type="password" placeholder="Paste Anthropic API key to enable summaries…">
+      <button class="summary-btn primary" onclick="submitApiKey()">Enable</button>
+    </div>`
+  document.getElementById('api-key-input')?.focus()
+}
+
+function submitApiKey() {
+  const val = document.getElementById('api-key-input')?.value.trim()
+  if (val) generateSummary(val)
+}
+
+function renderSummaryCard() {
+  const card = document.getElementById('summary-card')
+  if (!card) return
+
+  if (!state.summary || state.summary.loading) {
+    card.innerHTML = `
+      <div class="summary-card__header">
+        <span class="summary-card__spark">✦</span>
+        <span class="summary-card__label">AI Summary</span>
+      </div>
+      <div class="summary-text loading">Generating summary…</div>`
+    return
+  }
+
+  if (state.summary.error) {
+    card.innerHTML = `
+      <div class="summary-card__header">
+        <span class="summary-card__spark">✦</span>
+        <span class="summary-card__label">AI Summary</span>
+        <div class="summary-card__actions">
+          <button class="summary-btn" onclick="localStorage.removeItem('${AI_KEY_STORE}');state.summary=null;renderSummaryKeyPrompt()">Reset key</button>
+        </div>
+      </div>
+      <div class="summary-text loading">${esc(state.summary.error)}</div>`
+    return
+  }
+
+  const ago = state.summary.generatedAt
+    ? `Generated ${new Date(state.summary.generatedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
+    : ''
+
+  card.innerHTML = `
+    <div class="summary-card__header">
+      <span class="summary-card__spark">✦</span>
+      <span class="summary-card__label">AI Summary</span>
+      <div class="summary-card__actions">
+        <button class="summary-btn" onclick="generateSummary()">Regenerate</button>
+      </div>
+    </div>
+    <div class="summary-text">${esc(state.summary.text || '')}</div>
+    ${ago ? `<div class="summary-meta">${ago}</div>` : ''}`
+}
+
+// ── Renders ───────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const months = [...new Set(state.milestones.map(m => dateToYM(m.date)).filter(Boolean))].sort()
+  const hasKey = !!localStorage.getItem(AI_KEY_STORE)
+  const hasMilestones = months.length > 0
+
+  // Summary card
+  let summaryHTML = ''
+  if (!hasMilestones) {
+    // No milestones: show prompt to add them, still show key input if no key
+    if (!hasKey) {
+      summaryHTML = `<div class="summary-card" id="summary-card">
+        <div class="summary-card__header"><span class="summary-card__spark">✦</span><span class="summary-card__label">AI Summary</span></div>
+        <div class="summary-key-row">
+          <input class="summary-key-input" id="api-key-input" type="password" placeholder="Paste Anthropic API key to enable summaries…">
+          <button class="summary-btn primary" onclick="submitApiKey()">Enable</button>
+        </div>
+      </div>`
+    }
+  } else if (!hasKey) {
+    summaryHTML = `<div class="summary-card" id="summary-card">
+      <div class="summary-card__header"><span class="summary-card__spark">✦</span><span class="summary-card__label">AI Summary</span></div>
+      <div class="summary-key-row">
+        <input class="summary-key-input" id="api-key-input" type="password" placeholder="Paste Anthropic API key to enable summaries…">
+        <button class="summary-btn primary" onclick="submitApiKey()">Enable</button>
+      </div>
+    </div>`
+  } else if (state.summary && !state.summary.loading) {
+    const ago = state.summary.generatedAt
+      ? `Generated ${new Date(state.summary.generatedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
+      : ''
+    if (state.summary.error) {
+      summaryHTML = `<div class="summary-card" id="summary-card">
+        <div class="summary-card__header"><span class="summary-card__spark">✦</span><span class="summary-card__label">AI Summary</span>
+          <div class="summary-card__actions"><button class="summary-btn" onclick="localStorage.removeItem('${AI_KEY_STORE}');state.summary=null;render()">Reset key</button></div>
+        </div>
+        <div class="summary-text loading">${esc(state.summary.error)}</div>
+      </div>`
+    } else {
+      summaryHTML = `<div class="summary-card" id="summary-card">
+        <div class="summary-card__header"><span class="summary-card__spark">✦</span><span class="summary-card__label">AI Summary</span>
+          <div class="summary-card__actions"><button class="summary-btn" onclick="generateSummary()">Regenerate</button></div>
+        </div>
+        <div class="summary-text">${esc(state.summary.text || '')}</div>
+        ${ago ? `<div class="summary-meta">${ago}</div>` : ''}
+      </div>`
+    }
+  } else {
+    // Has key, no summary yet (or loading)
+    const isLoading = state.summary && state.summary.loading
+    summaryHTML = `<div class="summary-card" id="summary-card">
+      <div class="summary-card__header"><span class="summary-card__spark">✦</span><span class="summary-card__label">AI Summary</span>
+        ${!isLoading && hasMilestones ? `<div class="summary-card__actions"><button class="summary-btn primary" onclick="generateSummary()">Generate</button></div>` : ''}
+      </div>
+      ${isLoading ? `<div class="summary-text loading">Generating summary…</div>` : `<div class="summary-text loading" style="opacity:.5">Add milestones then generate a summary.</div>`}
+    </div>`
+  }
+
+  if (!hasMilestones) {
+    return `<div class="page-header">
+      <div class="page-header__eyebrow">Monthly Tracker</div>
+      <div class="page-header__title">Milestones by Month</div>
+      <div class="page-header__sub">Milestones added in Show, Stage, or Sphere appear here, organized by due date with a progress tracker per month.</div>
+    </div>
+    ${summaryHTML}
+    <div class="empty-state">
+      <div class="empty-state__glyph">○</div>
+      <div class="empty-state__title">No milestones yet</div>
+      <div class="empty-state__body">Navigate to a dimension and add a milestone with a date.</div>
+    </div>`
+  }
+
+  const sections = months.map(ym => {
+    const ms  = state.milestones.filter(m => dateToYM(m.date) === ym)
+    const avg  = Math.round(ms.reduce((s,m) => s + m.progress, 0) / ms.length)
+    const done = ms.filter(m => m.progress >= 100).length
+    const byDim = {}
+    ms.forEach(m => { if (!byDim[m.dim]) byDim[m.dim] = []; byDim[m.dim].push(m) })
+    const groupsHTML = DIMS.filter(d => byDim[d.key]).map(d =>
+      `<div class="dim-group dim-group--${d.key}">
+        <div class="dim-group__label">${d.name}</div>
+        ${byDim[d.key].map(m => msRowHTML(m, { editable:false, showArea:true, showDri:true })).join('')}
+      </div>`
+    ).join('')
+    return `<div class="month-section">
+      <div class="month-header">
+        <div class="month-header__name">${formatMonth(ym)}</div>
+        <div class="month-header__count">${done} / ${ms.length} complete</div>
+        <div class="pbar-wrap"><div class="pbar"><div class="pbar__fill" style="width:${avg}%"></div></div><span class="month-header__pct">${avg}%</span></div>
+      </div>
+      ${groupsHTML}
+    </div>`
+  }).join('')
+
+  return `<div class="page-header">
+    <div class="page-header__eyebrow">Monthly Tracker</div>
+    <div class="page-header__title">Milestones by Month</div>
+  </div>
+  ${summaryHTML}
+  ${sections}`
+}
+
+function renderDim(dimKey) {
+  const dim = DIM_MAP[dimKey]; if (!dim) return ''
+  const avg   = dimAvgProgress(dimKey)
+  const total = state.milestones.filter(m => m.dim === dimKey).length
+  const stat  = avg !== null ? `${avg}% avg · ${total} milestone${total!==1?'s':''}` : 'No milestones yet'
+
+  const outputsHTML = dim.outputs.map(out => {
+    const missionText = state.missions[out.id] || out.defaultMission
+    const areaPct = areaAvgProgress(out.id)
+    const ms = state.milestones.filter(m => m.area === out.id)
+    const headBarHTML = areaPct !== null
+      ? `<div class="output-card__head-bar"><div class="head-pbar"><div class="head-pbar__fill" style="width:${areaPct}%"></div></div><span class="head-pbar-pct">${areaPct}%</span></div>`
+      : ''
+    return `<div class="output-card">
+      <div class="output-card__head">
+        <div class="output-card__title-wrap">
+          <div class="output-card__title">${esc(out.title)}</div>${headBarHTML}
+        </div>
+        ${driChipHTML(out.id, 'area')}
+      </div>
+      <div class="output-section-label">Mission</div>
+      <div class="output-mission" contenteditable="true" data-area-id="${out.id}" data-placeholder="Define the mission…" spellcheck="false">${esc(missionText)}</div>
+      <div class="output-section-label" style="padding-top:14px">Milestones</div>
+      <div class="output-milestones">
+        ${ms.length ? ms.map(m => msRowHTML(m, { editable:true })).join('') : `<div style="padding:6px 18px 8px;font-size:.72rem;color:var(--muted);opacity:.55">No milestones yet</div>`}
+      </div>
+      <div class="output-add">
+        <button class="add-ms-btn" id="addbtn-${out.id}" onclick="openAddForm('${out.id}')">${PLUS_SVG} Add milestone</button>
+        <div class="add-ms-form" id="form-${out.id}">
+          <input class="fi-text" id="fi-${out.id}" type="text" placeholder="Describe this milestone…"
+            onkeydown="if(event.key==='Enter'){saveMilestone('${dimKey}','${out.id}')}else if(event.key==='Escape'){closeAddForm('${out.id}')}">
+          <input class="fi-date" id="fd-${out.id}" type="date" value="${today()}">
+          <button class="btn-save" onclick="saveMilestone('${dimKey}','${out.id}')">Save</button>
+          <button class="btn-cancel" onclick="closeAddForm('${out.id}')">Cancel</button>
+        </div>
+      </div>
+    </div>`
+  }).join('')
+
+  return `<div>
+    <div class="dim-page-header">
+      <div class="dim-accent" style="background:${dim.color}"></div>
+      <div class="dim-header-body">
+        <div class="dim-header-name">${dim.name}</div>
+        <div class="dim-header-sub">${dim.subtitle}</div>
+        <div class="dim-header-mission">${esc(dim.mission)}</div>
+      </div>
+      <div class="dim-header-meta">${driChipHTML(dimKey, 'dim')}<span class="dim-header-stat">${stat}</span></div>
+    </div>
+    ${outputsHTML}
+  </div>`
+}
+
+function renderSignals() {
+  return `<div class="page-header"><div class="page-header__eyebrow">Program</div><div class="page-header__title">Signals</div><div class="page-header__sub">Leading indicators the program is working.</div></div>
+  <div class="prose-section">
+    <p><strong>Inbound interest up</strong> — unsolicited DMs from designers after posts or talks.</p>
+    <p><strong>Referral quality up</strong> — candidates mentioning Studio specifically in their process.</p>
+    <p><strong>Repeat invites</strong> — conferences and orgs inviting Studio back without us pitching.</p>
+    <p><strong>Community ask rate</strong> — external orgs asking Studio to co-create, speak, or partner.</p>
+    <p><strong>Audience growth</strong> — steady growth in Studio's combined LinkedIn reach and post engagement.</p>
+  </div>`
+}
+
+function renderAbout() {
+  return `<div class="page-header">
+    <div class="page-header__eyebrow">Studio Presence</div>
+    <div class="page-header__title">About</div>
+  </div>
+  <div class="about-statement">Make DoorDash Design impossible to ignore — a studio the industry knows by name, wants to hire from, and looks to for how good design actually gets done at scale.</div>
+  <div class="about-dims">
+    ${DIMS.map(d => `<div class="about-dim">
+      <span class="about-dim__dot" style="background:${d.color}"></span>
+      <div>
+        <div class="about-dim__name">${esc(d.name)}</div>
+        <div class="about-dim__mission">${esc(d.mission)}</div>
+      </div>
+    </div>`).join('')}
+  </div>`
+}
+
+function renderPeople() {
+  const headRow = `<div class="people-table__head">
+    <div class="people-col people-col--dim">Dim</div>
+    <div class="people-col people-col--area">Area</div>
+    <div class="people-col people-col--dri">DRI</div>
+    <div class="people-col people-col--mission">Mission</div>
+    <div class="people-col people-col--done">What's been done</div>
+    <div class="people-col people-col--output">Output</div>
+  </div>`
+
+  const rows = DIMS.flatMap(dim =>
+    dim.outputs.map((area, i) => {
+      const mission = state.missions[area.id] || area.defaultMission
+
+      const areaMs = state.milestones.filter(m => m.area === area.id)
+      const doneMs = areaMs.filter(m => m.progress >= 100)
+      const doneHTML = doneMs.length
+        ? doneMs.map(m =>
+            `<div class="people-done-item">
+              <span class="people-done-check">${CHECK_SVG}</span>
+              <span class="people-done-lbl">${esc(m.label)}</span>
+            </div>`
+          ).join('')
+        : `<span class="people-empty">Nothing completed yet</span>`
+
+      const allOutputs = areaMs.flatMap(m => m.outputs || [])
+      const outputHTML = allOutputs.length
+        ? `<div class="people-outputs">${allOutputs.map(o =>
+            `<img src="${esc(o.dataUrl)}" class="people-output-thumb" onclick="previewOutput('${esc(o.dataUrl)}')" title="${esc(o.name)}">`
+          ).join('')}</div>`
+        : `<span class="people-empty">—</span>`
+
+      const dimCell = i === 0
+        ? `<div class="people-col people-col--dim"><span class="people-dim-badge" style="color:${dim.color}">${esc(dim.name)}</span></div>`
+        : `<div class="people-col people-col--dim"></div>`
+
+      return `<div class="people-table__row">
+        ${dimCell}
+        <div class="people-col people-col--area"><div class="people-area-name">${esc(area.title)}</div></div>
+        <div class="people-col people-col--dri">${driChipHTML(area.id, 'area')}</div>
+        <div class="people-col people-col--mission">
+          <div class="people-mission-wrap">
+            <div class="people-mission-edit${!state.missions[area.id] ? ' is-default' : ''}" contenteditable="true" data-area-id="${esc(area.id)}" data-placeholder="Write a mission…" spellcheck="false">${esc(mission)}</div>
+            <button class="people-mission-pencil" onclick="focusMission('${esc(area.id)}')" title="Edit mission">${PENCIL_SVG}</button>
+            ${!state.missions[area.id] ? `<button class="people-mission-add" onclick="focusMission('${esc(area.id)}')">${PLUS_SVG} Add mission</button>` : ''}
+          </div>
+        </div>
+        <div class="people-col people-col--done">${doneHTML}</div>
+        <div class="people-col people-col--output">${outputHTML}</div>
+      </div>`
+    })
+  ).join('')
+
+  return `<div class="page-header">
+    <div class="page-header__eyebrow">Overview</div>
+    <div class="page-header__title">Who's Driving What</div>
+    <div class="page-header__sub">DRI, mission, and progress across all three dimensions. Click any DRI chip to assign ownership.</div>
+  </div>
+  <div class="people-table">${headRow}${rows}</div>`
+}
+
+function updateSidebar() {
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.view === view))
+  DIMS.forEach(d => {
+    const avg = dimAvgProgress(d.key)
+    const el  = document.getElementById('pct-' + d.key)
+    if (!el) return
+    const dri = state.dimOwners[d.key]
+    const avatarHTML = dri ? avatarWrapHTML(dri.avatar, dri.name, 16) : ''
+    const pctText = avg !== null ? `${avg}%` : '—'
+    el.innerHTML = avatarHTML + pctText
+  })
+}
+
+function render() {
+  const main = document.getElementById('main')
+  main.classList.toggle('main--wide', view === 'vteam')
+  if      (view === 'show')       main.innerHTML = renderDim('show')
+  else if (view === 'stage')      main.innerHTML = renderDim('stage')
+  else if (view === 'sphere')     main.innerHTML = renderDim('sphere')
+  else if (view === 'vteam')      main.innerHTML = renderPeople()
+  else if (view === 'signals')    main.innerHTML = renderSignals()
+  else if (view === 'about')      main.innerHTML = renderAbout()
+  else                            main.innerHTML = renderDashboard()
+  updateSidebar()
+
+  document.querySelectorAll('.output-mission[data-area-id], .people-mission-edit[data-area-id]').forEach(el => {
+    const area = AREA_MAP[el.dataset.areaId]
+    if (area) bindMissionEdit(el, area.id, area.defaultMission)
+  })
+}
+
+render()
+</script>
+</body>
+</html>
