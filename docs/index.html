@@ -115,10 +115,9 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .dim-group--sphere .dim-group__label { color: var(--sphere); }
 
 /* ── Milestone row ── */
-.ms-row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px; transition: background .1s; }
+.ms-row { display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; border-radius: 6px; transition: background .1s; }
 .ms-row:hover { background: rgba(42,24,0,.04); }
-.ms-row:hover .ms-delete { color: var(--muted); }
-.ms-circle { width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid rgba(42,24,0,.25); background: none; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: .58rem; color: transparent; transition: all .15s; cursor: pointer; user-select: none; }
+.ms-circle { width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid rgba(42,24,0,.25); background: none; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: .58rem; color: transparent; transition: all .15s; cursor: pointer; user-select: none; margin-top: 2px; }
 .ms-circle:hover { border-color: var(--dim-c, var(--gold)); }
 .ms-row.p-doing .ms-circle { border-color: var(--dim-c, var(--gold)); box-shadow: 0 0 0 3px rgba(42,24,0,.1); }
 .ms-row.p-done  .ms-circle { background: var(--dim-c, var(--sphere)); border-color: var(--dim-c, var(--sphere)); color: #fff; }
@@ -127,7 +126,7 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .ms-label { flex: 1; font-size: .78rem; line-height: 1.45; color: var(--ink); outline: none; }
 .ms-label.editable { cursor: text; }
 .ms-label.is-editing { background: rgba(217,159,24,.08); border-radius: 3px; padding: 1px 4px; }
-.ms-date-tag { font-size: .62rem; color: var(--muted); white-space: nowrap; letter-spacing: .03em; }
+.ms-date-tag { font-size: .62rem; color: var(--muted); white-space: nowrap; letter-spacing: .03em; margin-top: 3px; }
 .ms-area-tag { font-size: .6rem; color: var(--muted); background: rgba(42,24,0,.06); padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
 .ms-progress { display: inline-flex; align-items: center; font-size: .62rem; padding: 2px 8px; border-radius: 10px; cursor: pointer; user-select: none; transition: opacity .12s; white-space: nowrap; min-width: 40px; justify-content: center; border: 1px solid transparent; }
 .ms-progress:hover { opacity: .7; }
@@ -135,12 +134,12 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .ms-progress.p-doing { color: #92650a;        background: rgba(217,159,24,.12); border-color: rgba(217,159,24,.25); }
 .ms-progress.p-done  { color: #1e5e3a;        background: rgba(45,106,79,.12);  border-color: rgba(45,106,79,.25); }
 .ms-progress-input { width: 52px; font-size: .62rem; font-family: 'DM Mono', monospace; color: var(--ink); background: rgba(42,24,0,.04); border: 1px solid var(--gold); border-radius: 10px; padding: 2px 8px; text-align: center; outline: none; }
-.ms-delete { background: none; border: none; color: transparent; cursor: pointer; font-size: .68rem; padding: 2px 3px; transition: color .12s; flex-shrink: 0; line-height: 1; }
+.ms-delete { background: none; border: none; color: rgba(42,24,0,.2); cursor: pointer; font-size: .68rem; padding: 2px 3px; transition: color .12s; flex-shrink: 0; line-height: 1; margin-top: 2px; }
 .ms-delete:hover { color: #b03030 !important; }
 
 /* ── Milestone output section ── */
-.ms-output-btn { background: none; border: none; cursor: pointer; padding: 2px 4px; flex-shrink: 0; display: flex; align-items: center; gap: 3px; line-height: 1; color: transparent; transition: color .12s; }
-.ms-row:hover .ms-output-btn { color: var(--muted); }
+.ms-output-btn { background: none; border: none; cursor: pointer; padding: 2px 4px; flex-shrink: 0; display: flex; align-items: center; gap: 3px; line-height: 1; color: rgba(42,24,0,.2); transition: color .12s; margin-top: 1px; }
+.ms-output-btn:hover { color: var(--muted); }
 .ms-output-btn.has-outputs { color: var(--gold) !important; }
 .ms-output-btn .ms-output-count { font-size: .56rem; }
 .ms-output-section { display: none; padding: 2px 10px 12px 37px; }
@@ -224,9 +223,6 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .head-pbar-pct { font-size: .6rem; color: var(--muted); }
 .output-section-label { font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); padding: 12px 18px 5px; }
 .output-mission { font-size: .76rem; color: var(--muted); line-height: 1.65; padding: 0 18px 14px; outline: none; cursor: text; border-bottom: 1px solid var(--rule); transition: background .1s; min-height: 20px; }
-.output-mission-clear { display: none; align-items: center; gap: 5px; margin: 8px 18px 2px; padding: 4px 10px; font-size: .62rem; font-family: 'DM Mono', monospace; color: #b03030; border: 1px solid rgba(176,48,48,.22); border-radius: 5px; background: none; cursor: pointer; transition: background .12s; }
-.output-mission-clear:hover { background: rgba(176,48,48,.07); }
-.main--delete-mode .output-mission-clear { display: inline-flex; }
 .output-mission:hover { background: rgba(217,159,24,.04); }
 .output-mission:focus { background: rgba(217,159,24,.07); color: var(--ink); }
 .output-mission:empty::before { content: attr(data-placeholder); opacity: .45; }
@@ -243,8 +239,7 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 
 /* ── Custom card delete ── */
 .output-card__head-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.output-card__del-btn { opacity: 0; transition: opacity .13s; background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px 8px; border-radius: 5px; display: flex; align-items: center; gap: 4px; font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .03em; }
-.output-card:hover .output-card__del-btn { opacity: 1; }
+.output-card__del-btn { opacity: 0; transition: opacity .13s; background: none; border: none; cursor: pointer; color: var(--muted); padding: 5px 7px; border-radius: 5px; display: flex; align-items: center; font-size: .75rem; line-height: 1; }
 .output-card__del-btn:hover { color: #b03030; background: rgba(176,48,48,.07); }
 .output-card__confirm-bar { display: none; align-items: center; gap: 10px; padding: 11px 18px; border-top: 1px solid rgba(176,48,48,.14); background: rgba(176,48,48,.03); font-size: .72rem; color: var(--muted); }
 .output-card__confirm-bar.visible { display: flex; }
@@ -1109,11 +1104,19 @@ function clearMission(areaId) {
 }
 
 function confirmDeleteOutput(id, dimKey) {
-  if (!state.customOutputs?.[dimKey]) return
-  state.customOutputs[dimKey] = state.customOutputs[dimKey].filter(o => o.id !== id)
+  if (!state.customOutputs) return
+  // Search passed dimKey first, then fall back to all dims in case of data drift
+  const keys = [dimKey, ...DIMS.map(d => d.key).filter(k => k !== dimKey)]
+  for (const k of keys) {
+    if (state.customOutputs[k]?.some(o => o.id === id)) {
+      state.customOutputs[k] = state.customOutputs[k].filter(o => o.id !== id)
+      break
+    }
+  }
   delete state.missions[id]
   delete state.areaOwners[id]
   delete AREA_MAP[id]
+  state.milestones = state.milestones.filter(m => m.area !== id)
   save()
   render()
 }
@@ -1449,12 +1452,11 @@ function renderDim(dimKey) {
         </div>
         <div class="output-card__head-right">
           ${driChipHTML(out.id, 'area')}
-          ${out.isCustom ? `<button class="output-card__del-btn" onclick="startDeleteOutput('${out.id}')">${TRASH_SVG} Remove</button>` : ''}
+          <button class="output-card__del-btn" onclick="${out.isCustom ? `startDeleteOutput('${out.id}')` : `clearMission('${out.id}')`}" title="${out.isCustom ? 'Remove area' : 'Clear mission'}">✕</button>
         </div>
       </div>
       <div class="output-section-label">Mission</div>
       <div class="output-mission" contenteditable="true" data-area-id="${out.id}" data-placeholder="Define the mission…" spellcheck="false">${esc(missionText)}</div>
-      <button class="output-mission-clear" onmousedown="event.preventDefault()" onclick="clearMission('${out.id}')">${TRASH_SVG} Clear mission</button>
       <div class="mission-actions" id="mact-${out.id}">
         <button class="btn-mission-save" onmousedown="event.preventDefault()" onclick="saveMissionAction('${out.id}')">Save</button>
         <button class="btn-mission-discard" onmousedown="event.preventDefault()" onclick="discardMissionAction('${out.id}')">Discard</button>
