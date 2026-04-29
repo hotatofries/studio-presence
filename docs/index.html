@@ -163,22 +163,30 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 #output-lightbox-close:hover { color: #fff; }
 
 /* ── V-Team overview ── */
-.people-table { border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background-image: linear-gradient(to right, transparent 68px, rgba(42,24,0,.1) 68px, rgba(42,24,0,.1) 71px, transparent 71px); }
-.people-table__head,
-.people-table__row { display: grid; grid-template-columns: 68px 195px 160px 1fr 210px 148px; }
-.people-table__head { background: rgba(42,24,0,.03); border-bottom: 1px solid var(--rule); }
-.people-table__row { border-bottom: 1px solid var(--rule); align-items: start; }
-.people-table__row:last-child { border-bottom: none; }
-.people-col { padding: 16px 18px; font-size: .7rem; }
-.people-table__head .people-col { padding: 11px 18px; font-size: .57rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-.people-col--dim { display: flex; align-items: flex-start; justify-content: flex-end; padding: 16px 12px 16px 10px; }
-.people-col--area { border-right: 1px solid var(--rule); }
-.people-col--dri { border-right: 1px solid var(--rule); padding-top: 14px; }
-.people-col--mission { border-right: 1px solid var(--rule); }
-.people-col--done { border-right: 1px solid var(--rule); }
-.people-col--output { padding: 16px 18px; }
-.people-dim-badge { font-size: .62rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding-top: 4px; }
-.people-area-name { font-size: .76rem; color: var(--ink); font-weight: 500; line-height: 1.45; }
+.ppl-sections { display: flex; flex-direction: column; gap: 24px; }
+.ppl-section { border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.ppl-section__header { display: flex; align-items: center; gap: 14px; padding: 14px 20px; background: rgba(42,24,0,.02); border-bottom: 1px solid var(--rule); border-left: 3px solid var(--dim-c, var(--rule)); }
+.ppl-section__name { font-size: .62rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--dim-c); }
+.ppl-section__sub { font-size: .65rem; color: var(--muted); flex: 1; }
+.ppl-section__pbar-wrap { display: flex; align-items: center; gap: 8px; }
+.ppl-section__pbar { width: 80px; height: 3px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.ppl-section__pbar__fill { height: 100%; background: var(--dim-c); border-radius: 2px; transition: width .3s; }
+.ppl-section__pct { font-size: .6rem; color: var(--muted); min-width: 44px; text-align: right; }
+.ppl-head, .ppl-row { display: grid; grid-template-columns: 160px 148px 1fr 130px 200px; align-items: start; }
+.ppl-head { background: rgba(42,24,0,.015); border-bottom: 1px solid var(--rule); }
+.ppl-head > div { padding: 9px 16px; font-size: .55rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.ppl-row { border-bottom: 1px solid var(--rule); }
+.ppl-row:last-child { border-bottom: none; }
+.ppl-row > div { padding: 14px 16px; }
+.ppl-cell--area { font-size: .76rem; color: var(--ink); font-weight: 500; line-height: 1.4; border-right: 1px solid var(--rule); }
+.ppl-cell--dri { border-right: 1px solid var(--rule); padding-top: 13px !important; }
+.ppl-cell--mission { border-right: 1px solid var(--rule); }
+.ppl-cell--prog { border-right: 1px solid var(--rule); padding-top: 17px !important; }
+.ppl-cell--done { }
+.ppl-pbar-wrap { display: flex; align-items: center; gap: 6px; }
+.ppl-pbar { width: 56px; height: 3px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.ppl-pbar__fill { height: 100%; background: var(--dim-c); border-radius: 2px; transition: width .3s; }
+.ppl-pbar-pct { font-size: .6rem; color: var(--muted); }
 .people-mission-wrap { position: relative; }
 .people-mission-edit { font-size: .69rem; color: var(--ink); line-height: 1.6; outline: none; border-radius: 4px; padding: 2px 5px; margin: -2px -5px; transition: background .1s; cursor: text; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .people-mission-edit.is-default { color: var(--muted); }
@@ -187,11 +195,9 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .people-mission-pencil { position: absolute; top: 0; right: -2px; background: none; border: none; cursor: pointer; color: transparent; padding: 3px; line-height: 1; transition: color .12s; }
 .people-mission-wrap:hover .people-mission-pencil { color: var(--muted); }
 .people-mission-pencil:hover { color: var(--gold) !important; }
-.people-mission-add { display: inline-flex; align-items: center; gap: 4px; margin-top: 7px; font-size: .62rem; color: var(--gold); background: none; border: 1px dashed rgba(217,159,24,.4); border-radius: 5px; padding: 3px 9px; cursor: pointer; font-family: 'DM Mono', monospace; letter-spacing: .04em; transition: border-color .13s, opacity .12s; }
-.people-mission-add:hover { border-color: var(--gold); opacity: .8; }
-.people-done-item { display: flex; align-items: baseline; gap: 7px; padding: 3px 0; }
-.people-done-check { flex-shrink: 0; color: var(--sphere); position: relative; top: 1px; }
-.people-done-lbl { font-size: .71rem; color: var(--ink); line-height: 1.4; }
+.people-done-item { display: flex; align-items: baseline; gap: 7px; padding: 2px 0; }
+.people-done-check { flex-shrink: 0; color: var(--dim-c, var(--sphere)); position: relative; top: 1px; }
+.people-done-lbl { font-size: .68rem; color: var(--ink); line-height: 1.4; }
 .people-outputs { display: flex; flex-wrap: wrap; gap: 7px; }
 .people-output-thumb { width: 58px; height: 44px; object-fit: cover; border-radius: 5px; border: 1px solid var(--rule); cursor: pointer; transition: opacity .12s; display: block; }
 .people-output-thumb:hover { opacity: .8; }
@@ -1518,63 +1524,72 @@ function renderAbout() {
 }
 
 function renderPeople() {
-  const headRow = `<div class="people-table__head">
-    <div class="people-col people-col--dim">Dim</div>
-    <div class="people-col people-col--area">Area</div>
-    <div class="people-col people-col--dri">DRI</div>
-    <div class="people-col people-col--mission">Mission</div>
-    <div class="people-col people-col--done">What's been done</div>
-    <div class="people-col people-col--output">Output</div>
-  </div>`
+  const sectionsHTML = DIMS.map(dim => {
+    const dimPct = dimAvgProgress(dim.key)
+    const pbarHTML = dimPct !== null
+      ? `<div class="ppl-section__pbar-wrap">
+          <div class="ppl-section__pbar"><div class="ppl-section__pbar__fill" style="width:${dimPct}%"></div></div>
+          <span class="ppl-section__pct">${dimPct}% avg</span>
+        </div>`
+      : ''
 
-  const rows = DIMS.flatMap(dim =>
-    dim.outputs.map((area, i) => {
+    const rowsHTML = dim.outputs.map(area => {
       const mission = state.missions[area.id] || area.defaultMission
-
+      const areaPct = areaAvgProgress(area.id)
       const areaMs = state.milestones.filter(m => m.area === area.id)
       const doneMs = areaMs.filter(m => m.progress >= 100)
-      const doneHTML = doneMs.length
-        ? doneMs.map(m =>
-            `<div class="people-done-item">
-              <span class="people-done-check">${CHECK_SVG}</span>
-              <span class="people-done-lbl">${esc(m.label)}</span>
-            </div>`
-          ).join('')
-        : `<span class="people-empty">Nothing completed yet</span>`
 
-      const allOutputs = areaMs.flatMap(m => m.outputs || [])
-      const outputHTML = allOutputs.length
-        ? `<div class="people-outputs">${allOutputs.map(o =>
-            `<img src="${esc(o.dataUrl)}" class="people-output-thumb" onclick="previewOutput('${esc(o.dataUrl)}')" title="${esc(o.name)}">`
-          ).join('')}</div>`
+      const progHTML = areaPct !== null
+        ? `<div class="ppl-pbar-wrap">
+            <div class="ppl-pbar"><div class="ppl-pbar__fill" style="width:${areaPct}%"></div></div>
+            <span class="ppl-pbar-pct">${areaPct}%</span>
+          </div>`
         : `<span class="people-empty">—</span>`
 
-      const dimCell = i === 0
-        ? `<div class="people-col people-col--dim"><span class="people-dim-badge" style="color:${dim.color}">${esc(dim.name)}</span></div>`
-        : `<div class="people-col people-col--dim"></div>`
+      const doneHTML = doneMs.length
+        ? doneMs.map(m => `<div class="people-done-item">
+            <span class="people-done-check">${CHECK_SVG}</span>
+            <span class="people-done-lbl">${esc(m.label)}</span>
+          </div>`).join('')
+        : `<span class="people-empty">Nothing yet</span>`
 
-      return `<div class="people-table__row">
-        ${dimCell}
-        <div class="people-col people-col--area"><div class="people-area-name">${esc(area.title)}</div></div>
-        <div class="people-col people-col--dri">${driChipHTML(area.id, 'area')}</div>
-        <div class="people-col people-col--mission">
+      return `<div class="ppl-row">
+        <div class="ppl-cell--area">${esc(area.title)}</div>
+        <div class="ppl-cell--dri">${driChipHTML(area.id, 'area')}</div>
+        <div class="ppl-cell--mission">
           <div class="people-mission-wrap">
             <div class="people-mission-edit${!state.missions[area.id] ? ' is-default' : ''}" contenteditable="true" data-area-id="${esc(area.id)}" data-placeholder="Write a mission…" spellcheck="false">${esc(mission)}</div>
             <button class="people-mission-pencil" onclick="focusMission('${esc(area.id)}')" title="Edit mission">${PENCIL_SVG}</button>
           </div>
         </div>
-        <div class="people-col people-col--done">${doneHTML}</div>
-        <div class="people-col people-col--output">${outputHTML}</div>
+        <div class="ppl-cell--prog">${progHTML}</div>
+        <div class="ppl-cell--done">${doneHTML}</div>
       </div>`
-    })
-  ).join('')
+    }).join('')
+
+    return `<div class="ppl-section" style="--dim-c:${dim.color}">
+      <div class="ppl-section__header">
+        <span class="ppl-section__name">${esc(dim.name)}</span>
+        <span class="ppl-section__sub">${esc(dim.subtitle)}</span>
+        ${pbarHTML}
+      </div>
+      <div class="ppl-head">
+        <div>Area</div>
+        <div>DRI</div>
+        <div>Mission</div>
+        <div>Progress</div>
+        <div>Done</div>
+      </div>
+      ${rowsHTML}
+    </div>`
+  }).join('')
 
   return `<div class="page-header">
     <div class="page-header__eyebrow">Overview</div>
     <div class="page-header__title">Who's Driving What</div>
     <div class="page-header__sub">DRI, mission, and progress across all three dimensions. Click any DRI chip to assign ownership.</div>
   </div>
-  <div class="people-table">${headRow}${rows}</div>`
+  <div class="ppl-sections">${sectionsHTML}</div>`
 }
 
 function updateSidebar() {
