@@ -339,23 +339,32 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(42,24,0,.13); border-radius: 3px; }
 
-/* ── Add Mission FAB ── */
-.add-mission-fab {
-  position: fixed; bottom: 32px; right: 32px;
-  display: none; align-items: center;
+/* ── Dim FAB (more menu) ── */
+.dim-fab { position: fixed; bottom: 32px; right: 32px; z-index: 200; display: none; flex-direction: column; align-items: flex-end; gap: 8px; }
+.dim-fab.visible { display: flex; }
+.dim-fab__menu { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; pointer-events: none; opacity: 0; transform: translateY(8px); transition: opacity .18s, transform .2s cubic-bezier(.4,0,.2,1); }
+.dim-fab:hover .dim-fab__menu { opacity: 1; pointer-events: all; transform: translateY(0); }
+.dim-fab__opt {
   background: var(--surface); border: none; border-radius: 100px;
-  height: 52px; width: 52px; overflow: hidden;
-  cursor: pointer;
-  box-shadow: 0 4px 20px rgba(42,24,0,.22), 0 1px 4px rgba(42,24,0,.1);
-  transition: width .24s cubic-bezier(.4,0,.2,1), box-shadow .18s;
-  z-index: 200; padding: 0; white-space: nowrap; color: var(--gold);
-  font-family: 'DM Mono', monospace; font-size: .69rem; letter-spacing: .06em;
+  padding: 11px 18px; cursor: pointer; white-space: nowrap;
+  font-family: 'DM Mono', monospace; font-size: .69rem; letter-spacing: .05em; color: var(--gold);
+  box-shadow: 0 2px 12px rgba(42,24,0,.16), 0 1px 3px rgba(42,24,0,.06);
+  display: flex; align-items: center; gap: 7px;
+  transition: box-shadow .13s, transform .12s;
 }
-.add-mission-fab.visible { display: flex; }
-.add-mission-fab:hover { width: 158px; box-shadow: 0 8px 32px rgba(42,24,0,.28), 0 2px 8px rgba(42,24,0,.1); }
-.add-mission-fab__icon { width: 52px; height: 52px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.add-mission-fab__text { padding-right: 20px; opacity: 0; transition: opacity .13s .08s; }
-.add-mission-fab:hover .add-mission-fab__text { opacity: 1; }
+.dim-fab__opt:hover { box-shadow: 0 4px 20px rgba(42,24,0,.24); transform: translateX(-3px); }
+.dim-fab__opt--danger { color: #b03030; }
+.dim-fab__opt--danger:hover { background: rgba(176,48,48,.04); }
+.dim-fab__opt--done { color: var(--gold); }
+.dim-fab__btn {
+  width: 52px; height: 52px; border-radius: 50%; border: none;
+  background: var(--surface); color: var(--gold); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(42,24,0,.22), 0 1px 4px rgba(42,24,0,.1);
+  transition: box-shadow .18s, transform .18s;
+}
+.dim-fab:hover .dim-fab__btn { box-shadow: 0 6px 28px rgba(42,24,0,.28); transform: scale(1.06); }
+.main--delete-mode .output-card__del-btn { opacity: 1 !important; }
 
 /* ── Custom output title (editable) ── */
 .output-card__title--editable { outline: none; cursor: text; border-radius: 3px; transition: background .1s; }
@@ -398,11 +407,14 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
   <div id="dri-results"></div>
 </div>
 
-<!-- Add Mission FAB -->
-<button class="add-mission-fab" id="add-mission-fab">
-  <span class="add-mission-fab__icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2v16M2 10h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>
-  <span class="add-mission-fab__text">add mission</span>
-</button>
+<!-- Dim more FAB -->
+<div class="dim-fab" id="dim-fab">
+  <div class="dim-fab__menu">
+    <button class="dim-fab__opt dim-fab__opt--danger" id="fab-opt-delete"></button>
+    <button class="dim-fab__opt" id="fab-opt-add"></button>
+  </div>
+  <button class="dim-fab__btn" aria-label="More options"><svg width="16" height="4" viewBox="0 0 16 4" fill="none"><circle cx="2" cy="2" r="1.5" fill="currentColor"/><circle cx="8" cy="2" r="1.5" fill="currentColor"/><circle cx="14" cy="2" r="1.5" fill="currentColor"/></svg></button>
+</div>
 
 <script>
 // ── Team (from Slack) ────────────────────────────────────────────────────────
@@ -564,12 +576,12 @@ const AREA_MAP = {}; DIMS.forEach(d => d.outputs.forEach(o => { AREA_MAP[o.id] =
 
 // ── Firebase ─────────────────────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyB7bb_-j1TuxQRGfmUWynANWkNt3ZTF6Jk",
-  authDomain:        "studio-presence-tracker.firebaseapp.com",
-  projectId:         "studio-presence-tracker",
-  storageBucket:     "studio-presence-tracker.firebasestorage.app",
-  messagingSenderId: "131988995830",
-  appId:             "1:131988995830:web:4b696a25dc39a6ee5c76d7"
+  apiKey:            "REPLACE_ME",
+  authDomain:        "REPLACE_ME.firebaseapp.com",
+  projectId:         "REPLACE_ME",
+  storageBucket:     "REPLACE_ME.appspot.com",
+  messagingSenderId: "REPLACE_ME",
+  appId:             "REPLACE_ME"
 }
 let db, DOC, _remoteListenerActive = false
 try {
@@ -637,6 +649,7 @@ function initials(name) { return name.split(' ').slice(0,2).map(w=>w[0]||'').joi
 const CHECK_SVG = `<svg width="9" height="7" viewBox="0 0 9 7" fill="none"><path d="M1 3.5l2.5 2.5 4.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`
 const PLUS_SVG  = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`
 const TRASH_SVG = `<svg width="10" height="11" viewBox="0 0 10 11" fill="none"><path d="M1 2.5h8M4 2.5V1.5h2v1M3.5 2.5v7h3v-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+const SMALL_PLUS_SVG = `<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v8M1 5h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`
 const USER_SVG  = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="3.5" r="2.2" stroke="currentColor" stroke-width="1.2"/><path d="M1 10c0-2.2 2-3.5 4.5-3.5S10 7.8 10 10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`
 const IMAGE_SVG  = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1.5" width="9" height="8" rx="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="3.8" cy="4.3" r="1" stroke="currentColor" stroke-width="1"/><path d="M1 8l2.5-2.5 2 2 1.5-2 2.5 2.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`
 const PENCIL_SVG = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7.5 1.5l2 2L3 10H1v-2L7.5 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
@@ -1303,6 +1316,28 @@ function renderDashboard() {
   ${sections}`
 }
 
+let dimDeleteMode = false
+function toggleDimDeleteMode() {
+  dimDeleteMode = !dimDeleteMode
+  const main = document.getElementById('main')
+  if (main) main.classList.toggle('main--delete-mode', dimDeleteMode)
+  updateFabMenu()
+}
+function updateFabMenu() {
+  const isDimView = ['show', 'stage', 'sphere'].includes(view)
+  const addOpt = document.getElementById('fab-opt-add')
+  const delOpt = document.getElementById('fab-opt-delete')
+  if (addOpt) {
+    addOpt.innerHTML = `${SMALL_PLUS_SVG} add mission`
+    addOpt.onclick = isDimView ? () => addCustomOutput(view) : null
+  }
+  if (delOpt) {
+    delOpt.innerHTML = dimDeleteMode ? `${CHECK_SVG} done` : `${TRASH_SVG} delete mission`
+    delOpt.className = dimDeleteMode ? 'dim-fab__opt dim-fab__opt--done' : 'dim-fab__opt dim-fab__opt--danger'
+    delOpt.onclick = isDimView ? toggleDimDeleteMode : null
+  }
+}
+
 function addCustomOutput(dimKey) {
   const id = dimKey + '-c-' + uid()
   if (!state.customOutputs) state.customOutputs = {}
@@ -1533,11 +1568,11 @@ function render() {
   updateSidebar()
 
   const isDimView = ['show', 'stage', 'sphere'].includes(view)
-  const fab = document.getElementById('add-mission-fab')
-  if (fab) {
-    fab.classList.toggle('visible', isDimView)
-    fab.onclick = isDimView ? () => addCustomOutput(view) : null
-  }
+  if (!isDimView) dimDeleteMode = false
+  main.classList.toggle('main--delete-mode', dimDeleteMode && isDimView)
+  const fab = document.getElementById('dim-fab')
+  if (fab) fab.classList.toggle('visible', isDimView)
+  updateFabMenu()
 
   document.querySelectorAll('.output-mission[data-area-id], .people-mission-edit[data-area-id]').forEach(el => {
     const area = AREA_MAP[el.dataset.areaId]
