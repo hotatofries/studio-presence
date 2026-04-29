@@ -318,6 +318,30 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(42,24,0,.13); border-radius: 3px; }
+
+/* ── Add Mission FAB ── */
+.add-mission-fab {
+  position: fixed; bottom: 32px; right: 32px;
+  display: none; align-items: center;
+  background: var(--surface); border: none; border-radius: 100px;
+  height: 52px; width: 52px; overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(42,24,0,.22), 0 1px 4px rgba(42,24,0,.1);
+  transition: width .24s cubic-bezier(.4,0,.2,1), box-shadow .18s;
+  z-index: 200; padding: 0; white-space: nowrap; color: var(--gold);
+  font-family: 'DM Mono', monospace; font-size: .69rem; letter-spacing: .06em;
+}
+.add-mission-fab.visible { display: flex; }
+.add-mission-fab:hover { width: 158px; box-shadow: 0 8px 32px rgba(42,24,0,.28), 0 2px 8px rgba(42,24,0,.1); }
+.add-mission-fab__icon { width: 52px; height: 52px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.add-mission-fab__text { padding-right: 20px; opacity: 0; transition: opacity .13s .08s; }
+.add-mission-fab:hover .add-mission-fab__text { opacity: 1; }
+
+/* ── Custom output title (editable) ── */
+.output-card__title--editable { outline: none; cursor: text; border-radius: 3px; transition: background .1s; }
+.output-card__title--editable:hover { background: rgba(217,159,24,.07); }
+.output-card__title--editable:focus { background: rgba(217,159,24,.12); }
+.output-card__title--editable:empty::before { content: 'Area title…'; opacity: .35; font-weight: 400; }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore-compat.js"></script>
@@ -353,6 +377,12 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
   </div>
   <div id="dri-results"></div>
 </div>
+
+<!-- Add Mission FAB -->
+<button class="add-mission-fab" id="add-mission-fab">
+  <span class="add-mission-fab__icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2v16M2 10h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+  <span class="add-mission-fab__text">add mission</span>
+</button>
 
 <script>
 // ── Team (from Slack) ────────────────────────────────────────────────────────
@@ -531,7 +561,7 @@ try {
 // ── State ────────────────────────────────────────────────────────────────────
 const KEY = 'studiopresence-tracker-v4'
 function defaultState() {
-  return { v:4, milestones:[], missions:{}, dimOwners:{}, areaOwners:{}, summary:null, updatedAt:null }
+  return { v:4, milestones:[], missions:{}, dimOwners:{}, areaOwners:{}, customOutputs:{}, summary:null, updatedAt:null }
 }
 let state = defaultState()
 // Warm-start from localStorage so the UI isn't blank while Firestore loads
@@ -1211,23 +1241,64 @@ function renderDashboard() {
   ${sections}`
 }
 
+function addCustomOutput(dimKey) {
+  const id = dimKey + '-c-' + uid()
+  if (!state.customOutputs) state.customOutputs = {}
+  if (!state.customOutputs[dimKey]) state.customOutputs[dimKey] = []
+  state.customOutputs[dimKey].push({ id, title: '' })
+  AREA_MAP[id] = { id, title: '', defaultMission: '', dimKey, dimName: DIM_MAP[dimKey].name }
+  save()
+  render()
+  setTimeout(() => {
+    const el = document.querySelector(`[data-custom-title="${id}"]`)
+    if (!el) return
+    el.focus()
+    const range = document.createRange(); range.selectNodeContents(el)
+    window.getSelection().removeAllRanges(); window.getSelection().addRange(range)
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, 30)
+}
+
+function bindCustomTitleEdit(el, id, dimKey) {
+  el.addEventListener('blur', () => {
+    const text = el.textContent.trim()
+    const outs = state.customOutputs?.[dimKey] || []
+    const out = outs.find(o => o.id === id)
+    if (!out) return
+    out.title = text || 'New area'
+    if (AREA_MAP[id]) AREA_MAP[id].title = out.title
+    if (!text) el.textContent = out.title
+    save()
+  })
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); el.blur() }
+    if (e.key === 'Escape') el.blur()
+  })
+}
+
 function renderDim(dimKey) {
   const dim = DIM_MAP[dimKey]; if (!dim) return ''
   const avg   = dimAvgProgress(dimKey)
   const total = state.milestones.filter(m => m.dim === dimKey).length
   const stat  = avg !== null ? `${avg}% avg · ${total} milestone${total!==1?'s':''}` : 'No milestones yet'
 
-  const outputsHTML = dim.outputs.map(out => {
+  const customOuts = (state.customOutputs && state.customOutputs[dimKey]) || []
+  const allOuts = [...dim.outputs, ...customOuts.map(o => ({ ...o, defaultMission: '', isCustom: true }))]
+
+  const outputsHTML = allOuts.map(out => {
     const missionText = state.missions[out.id] || out.defaultMission
     const areaPct = areaAvgProgress(out.id)
     const ms = state.milestones.filter(m => m.area === out.id)
     const headBarHTML = areaPct !== null
       ? `<div class="output-card__head-bar"><div class="head-pbar"><div class="head-pbar__fill" style="width:${areaPct}%"></div></div><span class="head-pbar-pct">${areaPct}%</span></div>`
       : ''
+    const titleHTML = out.isCustom
+      ? `<div class="output-card__title output-card__title--editable" contenteditable="true" data-custom-title="${out.id}" data-custom-dim="${dimKey}" spellcheck="false">${esc(out.title)}</div>`
+      : `<div class="output-card__title">${esc(out.title)}</div>`
     return `<div class="output-card">
       <div class="output-card__head">
         <div class="output-card__title-wrap">
-          <div class="output-card__title">${esc(out.title)}</div>${headBarHTML}
+          ${titleHTML}${headBarHTML}
         </div>
         ${driChipHTML(out.id, 'area')}
       </div>
@@ -1367,6 +1438,15 @@ function updateSidebar() {
 }
 
 function render() {
+  // Sync custom outputs into AREA_MAP so mission editing works for them
+  if (state.customOutputs) {
+    DIMS.forEach(d => {
+      ;(state.customOutputs[d.key] || []).forEach(o => {
+        AREA_MAP[o.id] = { id: o.id, title: o.title, defaultMission: '', dimKey: d.key, dimName: d.name }
+      })
+    })
+  }
+
   const main = document.getElementById('main')
   main.classList.toggle('main--wide', view === 'vteam')
   if      (view === 'show')       main.innerHTML = renderDim('show')
@@ -1378,9 +1458,20 @@ function render() {
   else                            main.innerHTML = renderDashboard()
   updateSidebar()
 
+  const isDimView = ['show', 'stage', 'sphere'].includes(view)
+  const fab = document.getElementById('add-mission-fab')
+  if (fab) {
+    fab.classList.toggle('visible', isDimView)
+    fab.onclick = isDimView ? () => addCustomOutput(view) : null
+  }
+
   document.querySelectorAll('.output-mission[data-area-id], .people-mission-edit[data-area-id]').forEach(el => {
     const area = AREA_MAP[el.dataset.areaId]
     if (area) bindMissionEdit(el, area.id, area.defaultMission)
+  })
+
+  document.querySelectorAll('[data-custom-title]').forEach(el => {
+    bindCustomTitleEdit(el, el.dataset.customTitle, el.dataset.customDim)
   })
 }
 
