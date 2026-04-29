@@ -239,7 +239,7 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 
 /* ── Custom card delete ── */
 .output-card__head-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.output-card__del-btn { opacity: 0; transition: opacity .13s; background: none; border: none; cursor: pointer; color: var(--muted); padding: 5px 7px; border-radius: 5px; display: flex; align-items: center; font-size: .75rem; line-height: 1; }
+.output-card__del-btn { opacity: 0; pointer-events: none; transition: opacity .13s; background: none; border: none; cursor: pointer; color: var(--muted); padding: 5px 7px; border-radius: 5px; display: flex; align-items: center; font-size: .75rem; line-height: 1; }
 .output-card__del-btn:hover { color: #b03030; background: rgba(176,48,48,.07); }
 .output-card__confirm-bar { display: none; align-items: center; gap: 10px; padding: 11px 18px; border-top: 1px solid rgba(176,48,48,.14); background: rgba(176,48,48,.03); font-size: .72rem; color: var(--muted); }
 .output-card__confirm-bar.visible { display: flex; }
@@ -404,7 +404,7 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .dim-fab:hover .dim-fab__btn svg circle:first-child  { transform: translateX(-2px); }
 .dim-fab:hover .dim-fab__btn svg circle:last-child   { transform: translateX(2px); }
 
-.main--delete-mode .output-card__del-btn { opacity: 1 !important; }
+.main--delete-mode .output-card__del-btn { opacity: 1 !important; pointer-events: auto; }
 
 /* ── Custom output title (editable) ── */
 .output-card__title--editable { outline: none; cursor: text; border-radius: 3px; transition: background .1s; }
@@ -616,12 +616,12 @@ const AREA_MAP = {}; DIMS.forEach(d => d.outputs.forEach(o => { AREA_MAP[o.id] =
 
 // ── Firebase ─────────────────────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: "",
+  apiKey:            "AIzaSyB7bb_-j1TuxQRGfmUWynANWkNt3ZTF6Jk",
+  authDomain:        "studio-presence-tracker.firebaseapp.com",
+  projectId:         "studio-presence-tracker",
+  storageBucket:     "studio-presence-tracker.firebasestorage.app",
+  messagingSenderId: "131988995830",
+  appId:             "1:131988995830:web:4b696a25dc39a6ee5c76d7"
 }
 let db, DOC, _remoteListenerActive = false
 try {
@@ -1103,6 +1103,11 @@ function clearMission(areaId) {
   render()
 }
 
+function handleCardDel(id, isCustom) {
+  if (isCustom) startDeleteOutput(id)
+  else clearMission(id)
+}
+
 function confirmDeleteOutput(id, dimKey) {
   if (!state.customOutputs) return
   // Search passed dimKey first, then fall back to all dims in case of data drift
@@ -1452,7 +1457,7 @@ function renderDim(dimKey) {
         </div>
         <div class="output-card__head-right">
           ${driChipHTML(out.id, 'area')}
-          <button class="output-card__del-btn" onclick="${out.isCustom ? `startDeleteOutput('${out.id}')` : `clearMission('${out.id}')`}" title="${out.isCustom ? 'Remove area' : 'Clear mission'}">✕</button>
+          <button class="output-card__del-btn" onclick="handleCardDel('${out.id}',${out.isCustom})" title="${out.isCustom ? 'Remove area' : 'Clear mission'}">✕</button>
         </div>
       </div>
       <div class="output-section-label">Mission</div>
