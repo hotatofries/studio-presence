@@ -105,10 +105,13 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .month-header__pct { font-size: .7rem; color: var(--ink); font-weight: 500; min-width: 32px; text-align: right; }
 
 /* ── Dim group ── */
-.dim-group { margin-bottom: 10px; }
-.dim-group__label { font-size: .59rem; letter-spacing: .16em; text-transform: uppercase; font-weight: 500; padding: 0 10px 5px; }
+.dim-group { margin-bottom: 10px; border-left: 2px solid transparent; padding-left: 8px; }
+.dim-group__label { font-size: .59rem; letter-spacing: .16em; text-transform: uppercase; font-weight: 500; padding: 0 2px 5px; }
+.dim-group--show   { border-left-color: var(--show); }
 .dim-group--show   .dim-group__label { color: var(--show); }
+.dim-group--stage  { border-left-color: var(--stage); }
 .dim-group--stage  .dim-group__label { color: var(--stage); }
+.dim-group--sphere { border-left-color: var(--sphere); }
 .dim-group--sphere .dim-group__label { color: var(--sphere); }
 
 /* ── Milestone row ── */
@@ -116,9 +119,9 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .ms-row:hover { background: rgba(42,24,0,.04); }
 .ms-row:hover .ms-delete { color: var(--muted); }
 .ms-circle { width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid rgba(42,24,0,.25); background: none; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: .58rem; color: transparent; transition: all .15s; cursor: pointer; user-select: none; }
-.ms-circle:hover { border-color: var(--gold); }
-.ms-row.p-doing .ms-circle { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(217,159,24,.18); }
-.ms-row.p-done  .ms-circle { background: var(--sphere); border-color: var(--sphere); color: #fff; }
+.ms-circle:hover { border-color: var(--dim-c, var(--gold)); }
+.ms-row.p-doing .ms-circle { border-color: var(--dim-c, var(--gold)); box-shadow: 0 0 0 3px rgba(42,24,0,.1); }
+.ms-row.p-done  .ms-circle { background: var(--dim-c, var(--sphere)); border-color: var(--dim-c, var(--sphere)); color: #fff; }
 .ms-row.p-done  .ms-circle:hover { opacity: .7; }
 .ms-row.p-done  .ms-label { opacity: .4; text-decoration: line-through; }
 .ms-label { flex: 1; font-size: .78rem; line-height: 1.45; color: var(--ink); outline: none; }
@@ -609,12 +612,12 @@ const AREA_MAP = {}; DIMS.forEach(d => d.outputs.forEach(o => { AREA_MAP[o.id] =
 
 // ── Firebase ─────────────────────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
-  apiKey:            "REPLACE_ME",
-  authDomain:        "REPLACE_ME.firebaseapp.com",
-  projectId:         "REPLACE_ME",
-  storageBucket:     "REPLACE_ME.appspot.com",
-  messagingSenderId: "REPLACE_ME",
-  appId:             "REPLACE_ME"
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: "",
 }
 let db, DOC, _remoteListenerActive = false
 try {
@@ -950,7 +953,8 @@ function msRowHTML(ms, opts = {}) {
       </button>`
     : ''
 
-  return `<div class="ms-block">
+  const dimStyle = opts.dimColor ? ` style="--dim-c:${opts.dimColor}"` : ''
+  return `<div class="ms-block"${dimStyle}>
     <div class="ms-row ${pc}">
       <div class="ms-circle" onclick="toggleMsDone('${ms.id}')">${ms.progress >= 100 ? CHECK_SVG : ''}</div>
       <span class="ms-label${isEditable?' editable':''}"${isEditable?` onclick="startMsEdit('${ms.id}', this)"`:''}>
@@ -1328,7 +1332,7 @@ function renderDashboard() {
     const groupsHTML = DIMS.filter(d => byDim[d.key]).map(d =>
       `<div class="dim-group dim-group--${d.key}">
         <div class="dim-group__label">${d.name}</div>
-        ${byDim[d.key].map(m => msRowHTML(m, { editable:false, showArea:true, showDri:true })).join('')}
+        ${byDim[d.key].map(m => msRowHTML(m, { editable:false, showArea:true, showDri:true, dimColor:d.color })).join('')}
       </div>`
     ).join('')
     return `<div class="month-section">
@@ -1419,13 +1423,11 @@ function renderDim(dimKey) {
     const missionText = state.missions[out.id] || out.defaultMission
     const areaPct = areaAvgProgress(out.id)
     const ms = state.milestones.filter(m => m.area === out.id)
-    const headBarHTML = areaPct !== null
-      ? `<div class="output-card__head-bar"><div class="head-pbar"><div class="head-pbar__fill" style="width:${areaPct}%"></div></div><span class="head-pbar-pct">${areaPct}%</span></div>`
-      : ''
+    const headBarHTML = `<div class="output-card__head-bar"><div class="head-pbar"><div class="head-pbar__fill" style="width:${areaPct ?? 0}%;background:${dim.color}"></div></div><span class="head-pbar-pct">${areaPct !== null ? `${areaPct}%` : '—'}</span></div>`
     const titleHTML = out.isCustom
       ? `<div class="output-card__title output-card__title--editable" contenteditable="true" data-custom-title="${out.id}" data-custom-dim="${dimKey}" spellcheck="false">${esc(out.title)}</div>`
       : `<div class="output-card__title">${esc(out.title)}</div>`
-    return `<div class="output-card">
+    return `<div class="output-card" style="box-shadow:inset 3px 0 0 ${dim.color}">
       <div class="output-card__head">
         <div class="output-card__title-wrap">
           ${titleHTML}${headBarHTML}
@@ -1443,7 +1445,7 @@ function renderDim(dimKey) {
       </div>
       <div class="output-section-label" style="padding-top:14px">Milestones</div>
       <div class="output-milestones">
-        ${ms.length ? ms.map(m => msRowHTML(m, { editable:true })).join('') : `<div style="padding:6px 18px 8px;font-size:.72rem;color:var(--muted);opacity:.55">No milestones yet</div>`}
+        ${ms.length ? ms.map(m => msRowHTML(m, { editable:true, dimColor:dim.color })).join('') : `<div style="padding:6px 18px 8px;font-size:.72rem;color:var(--muted);opacity:.55">No milestones yet</div>`}
       </div>
       <div class="output-add">
         <button class="add-ms-btn" id="addbtn-${out.id}" onclick="openAddForm('${out.id}')">${PLUS_SVG} Add milestone</button>
@@ -1549,7 +1551,6 @@ function renderPeople() {
           <div class="people-mission-wrap">
             <div class="people-mission-edit${!state.missions[area.id] ? ' is-default' : ''}" contenteditable="true" data-area-id="${esc(area.id)}" data-placeholder="Write a mission…" spellcheck="false">${esc(mission)}</div>
             <button class="people-mission-pencil" onclick="focusMission('${esc(area.id)}')" title="Edit mission">${PENCIL_SVG}</button>
-            ${!state.missions[area.id] ? `<button class="people-mission-add" onclick="focusMission('${esc(area.id)}')">${PLUS_SVG} Add mission</button>` : ''}
           </div>
         </div>
         <div class="people-col people-col--done">${doneHTML}</div>
