@@ -839,6 +839,7 @@ if (DOC) {
       const p = snap.data()
       if (p.v === 4 && p.updatedAt !== state.updatedAt) {
         state = { ...defaultState(), ...p }
+        _firestoreLoadedState = { ...state }
         localStorage.setItem(KEY, JSON.stringify(state))
         render()
       }
@@ -900,7 +901,18 @@ function save() {
         return
       }
     }
-    DOC.set(state).catch(e => console.warn('Firestore write failed:', e))
+    // Merge-write: only update fields that differ from what Firestore had on load
+    // This prevents two people saving simultaneously from wiping each other's data
+    const writePayload = { updatedAt: state.updatedAt, v: state.v }
+    const mergeFields = ['milestones','missions','roadmap','areaOwners','dimOwners','areaNames','summary','hiddenAreas','customOutputs']
+    for (const f of mergeFields) {
+      if (!_firestoreLoadedState || JSON.stringify(state[f]) !== JSON.stringify(_firestoreLoadedState[f])) {
+        writePayload[f] = state[f]
+      }
+    }
+    const isFirstSave = !_firestoreLoadedState
+    const writeOp = isFirstSave ? DOC.set(writePayload) : DOC.set(writePayload, { merge: true })
+    writeOp.catch(e => console.warn('Firestore write failed:', e))
     // Write a timestamped backup snapshot — max once per minute, keeps last 20 days
     const now = Date.now()
     if (now - _lastBackupAt >= 60 * 1000) {
