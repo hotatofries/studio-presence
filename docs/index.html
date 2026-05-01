@@ -53,6 +53,9 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .roadmap-track-line.invisible { background: transparent; }
 .roadmap-track-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(42,24,0,.25); background: var(--paper); flex-shrink: 0; position: relative; z-index: 2; }
 .roadmap-col--now .roadmap-track-dot { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 4px rgba(217,159,24,.15); }
+.roadmap-col--future .roadmap-col__header { opacity: 0.35; }
+.roadmap-col--future .roadmap-track-dot { opacity: 0.3; }
+.roadmap-col--future .roadmap-track-line { opacity: 0.35; }
 .roadmap-col__connector { width: 1px; height: 24px; background: var(--rule); }
 .roadmap-card { width: calc(100% - 24px); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
 .roadmap-goals { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
@@ -65,6 +68,9 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .roadmap-theme-tag.stage  { color: var(--stage);  background: rgba(59,96,136,.1); }
 .roadmap-theme-tag.sphere { color: var(--sphere); background: rgba(45,106,79,.1); }
 .roadmap-theme-tag.all    { color: var(--muted);  background: rgba(42,24,0,.06); }
+.roadmap-summary { padding: 11px 16px 10px; border-bottom: 1px solid var(--rule); }
+.roadmap-summary__prose { font-family: 'Cormorant Garamond', serif; font-size: .82rem; font-style: italic; color: var(--muted); line-height: 1.45; margin-bottom: 8px; }
+.roadmap-summary__chips { display: flex; gap: 4px; flex-wrap: wrap; }
 .nav-divider { height: 1px; background: rgba(255,255,255,.07); margin: 10px 20px; }
 .nav-pct { margin-left: auto; font-size: .62rem; color: rgba(255,255,255,.28); letter-spacing: 0; text-transform: none; display: flex; align-items: center; gap: 6px; }
 .nav-pct .dri-avatar-wrap img { border-radius: 50%; opacity: .75; }
@@ -530,6 +536,12 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .rm-goal-del:hover { color:#b03030; }
 .rm-add-btn { display:flex; align-items:center; gap:5px; background:none; border:none; cursor:pointer; font-family:'DM Mono',monospace; font-size:.67rem; color:var(--muted); padding:7px 14px 10px; transition:color .13s; }
 .rm-add-btn:hover { color:var(--gold); }
+.rm-drag-handle { display:flex; align-items:center; cursor:grab; color:rgba(42,24,0,.18); padding:2px 2px 0 0; flex-shrink:0; transition:color .12s; }
+.rm-drag-handle:hover { color:rgba(42,24,0,.45); }
+.rm-drag-handle:active { cursor:grabbing; }
+.rm-goal-row.dragging { opacity:.35; }
+.rm-goal-row.drag-before { border-top:2px solid var(--gold) !important; }
+.rm-goal-row.drag-after  { border-bottom:2px solid var(--gold) !important; }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore-compat.js"></script>
@@ -780,6 +792,7 @@ function defaultState() {
   return { v:4, milestones:[], missions:{}, areaNames:{}, dimOwners:{}, areaOwners:{}, customOutputs:{}, hiddenAreas:[], roadmap:null, summary:null, updatedAt:null }
 }
 let state = defaultState()
+let _firestoreReady = !DOC  // if no Firestore, treat as ready immediately
 // Warm-start from localStorage so the UI isn't blank while Firestore loads
 try {
   const raw = localStorage.getItem(KEY)
@@ -792,6 +805,7 @@ if (DOC) {
       const p = snap.data()
       if (p.v === 4) { state = { ...defaultState(), ...p }; render() }
     }
+    _firestoreReady = true
     if (!_remoteListenerActive) {
       _remoteListenerActive = true
       DOC.onSnapshot(snap => {
@@ -800,13 +814,36 @@ if (DOC) {
         if (p.v === 4 && p.updatedAt !== state.updatedAt) { state = { ...defaultState(), ...p }; render() }
       })
     }
-  }).catch(e => console.warn('Firestore load failed, using local state:', e))
+  }).catch(e => { console.warn('Firestore load failed, using local state:', e); _firestoreReady = true })
 }
 function save() {
   state.updatedAt = Date.now()
   localStorage.setItem(KEY, JSON.stringify(state))
-  if (DOC) DOC.set(state).catch(e => console.warn('Firestore write failed:', e))
+  if (DOC && _firestoreReady) {
+    const hasData = state.milestones.length > 0 ||
+      Object.keys(state.missions).length > 0 ||
+      Object.keys(state.areaOwners).length > 0 ||
+      Object.keys(state.dimOwners).length > 0 ||
+      state.roadmap !== null
+    if (!hasData && !_userHasMadeChanges) return
+    DOC.set(state).catch(e => console.warn('Firestore write failed:', e))
+    // Write a timestamped backup — keeps last 20 saves for recovery
+    const backupCol = db.collection('studio_backups')
+    backupCol.add({ ...state, _savedAt: Date.now() })
+      .then(ref => {
+        // Prune old backups beyond 20
+        backupCol.orderBy('_savedAt').get().then(snap => {
+          if (snap.size > 20) {
+            snap.docs.slice(0, snap.size - 20).forEach(d => d.ref.delete())
+          }
+        })
+      })
+      .catch(() => {})
+  }
 }
+let _userHasMadeChanges = false
+// Mark that the user has intentionally interacted — allows save() to write empty state if they cleared everything
+document.addEventListener('click', () => { _userHasMadeChanges = true }, { once: true })
 
 // ── Router ───────────────────────────────────────────────────────────────────
 let view = 'vision'
@@ -1805,6 +1842,11 @@ const ROADMAP_DEFAULTS = {
       { id:'q4g2', title:'Year-end showcase',          sub:"A moment that celebrates and amplifies the studio's body of work.",         theme:'show'   },
       { id:'q4g3', title:'Set up 2027',                sub:'Retrospective, refined program model, goals for next year.',                  theme:'all'    },
     ]},
+    { label:'2027',  name:'Q1', dates:'Jan – Mar 2027', future: true, goals:[
+      { id:'q1n1', title:'Program goals coming soon',  sub:'Next chapter being planned as 2026 wraps up.',                               theme:'all'    },
+      { id:'q1n2', title:'Studio continues to grow',   sub:'Show, Stage, and Sphere efforts evolve into year two.',                      theme:'all'    },
+      { id:'q1n3', title:'New opportunities ahead',    sub:'Recruiting, partnerships, and external recognition targets.',                 theme:'sphere' },
+    ]},
   ]
 }
 
@@ -1817,6 +1859,7 @@ function openRoadmapModal() {
     <textarea class="rm-textarea" id="rm-vision" rows="3">${esc(data.vision)}</textarea>
   </div>`
   data.quarters.forEach((q, qi) => {
+    if (q.future) return
     html += `<div class="rm-quarter">
       <div class="rm-quarter__head" onclick="this.closest('.rm-quarter').classList.toggle('collapsed')">
         <span class="rm-quarter__name">${q.name}</span>
@@ -1830,12 +1873,18 @@ function openRoadmapModal() {
     </div>`
   })
   document.getElementById('roadmap-modal-body').innerHTML = html
+  data.quarters.forEach((q, qi) => {
+    if (q.future) return
+    const list = document.getElementById(`rm-q${qi}-goals`)
+    if (list) initRmDrag(list)
+  })
   document.getElementById('roadmap-modal').classList.add('open')
 }
 
 function rmGoalRow(qi, g) {
   const opts = ['all','show','stage','sphere'].map(t => `<option value="${t}"${g.theme===t?' selected':''}>${t}</option>`).join('')
   return `<div class="rm-goal-row">
+    <div class="rm-drag-handle" title="Drag to reorder"><svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg></div>
     <div class="rm-goal-fields">
       <input class="rm-input rm-title-input" placeholder="Goal title" value="${esc(g.title)}">
       <input class="rm-input rm-sub-input"   placeholder="Description (optional)" value="${esc(g.sub||'')}">
@@ -1853,6 +1902,43 @@ function rmAddGoal(qi) {
   list.lastElementChild.querySelector('.rm-title-input').focus()
 }
 
+function initRmDrag(list) {
+  let dragSrc = null
+  list.addEventListener('mousedown', e => {
+    const handle = e.target.closest('.rm-drag-handle')
+    if (handle) handle.closest('.rm-goal-row').draggable = true
+  })
+  list.addEventListener('dragstart', e => {
+    dragSrc = e.target.closest('.rm-goal-row')
+    if (!dragSrc) return
+    dragSrc.classList.add('dragging')
+    e.dataTransfer.effectAllowed = 'move'
+  })
+  list.addEventListener('dragover', e => {
+    e.preventDefault()
+    const row = e.target.closest('.rm-goal-row')
+    if (!row || row === dragSrc) return
+    list.querySelectorAll('.rm-goal-row').forEach(r => r.classList.remove('drag-before','drag-after'))
+    const rect = row.getBoundingClientRect()
+    row.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drag-before' : 'drag-after')
+  })
+  list.addEventListener('dragleave', e => {
+    if (!list.contains(e.relatedTarget)) list.querySelectorAll('.rm-goal-row').forEach(r => r.classList.remove('drag-before','drag-after'))
+  })
+  list.addEventListener('drop', e => {
+    e.preventDefault()
+    const row = e.target.closest('.rm-goal-row')
+    if (!row || !dragSrc || row === dragSrc) return
+    row.classList.contains('drag-before') ? list.insertBefore(dragSrc, row) : list.insertBefore(dragSrc, row.nextSibling)
+    list.querySelectorAll('.rm-goal-row').forEach(r => r.classList.remove('drag-before','drag-after','dragging'))
+    if (dragSrc) dragSrc.draggable = false
+  })
+  list.addEventListener('dragend', () => {
+    list.querySelectorAll('.rm-goal-row').forEach(r => { r.classList.remove('drag-before','drag-after','dragging'); r.draggable = false })
+    dragSrc = null
+  })
+}
+
 function closeRoadmapModal() {
   document.getElementById('roadmap-modal').classList.remove('open')
 }
@@ -1861,17 +1947,20 @@ function saveRoadmapModal() {
   const data = getRoadmapData()
   state.roadmap = {
     vision: document.getElementById('rm-vision').value.trim(),
-    quarters: data.quarters.map((q, qi) => ({
-      ...q,
-      goals: Array.from(document.querySelectorAll(`#rm-q${qi}-goals .rm-goal-row`))
-        .map(row => ({
-          id: uid(),
-          title: row.querySelector('.rm-title-input').value.trim(),
-          sub:   row.querySelector('.rm-sub-input').value.trim(),
-          theme: row.querySelector('.rm-theme-select').value,
-        }))
-        .filter(g => g.title)
-    }))
+    quarters: data.quarters.map((q, qi) => {
+      if (q.future) return q
+      return {
+        ...q,
+        goals: Array.from(document.querySelectorAll(`#rm-q${qi}-goals .rm-goal-row`))
+          .map(row => ({
+            id: uid(),
+            title: row.querySelector('.rm-title-input').value.trim(),
+            sub:   row.querySelector('.rm-sub-input').value.trim(),
+            theme: row.querySelector('.rm-theme-select').value,
+          }))
+          .filter(g => g.title)
+      }
+    })
   }
   save()
   closeRoadmapModal()
@@ -1880,6 +1969,30 @@ function saveRoadmapModal() {
 
 function renderRoadmap() {
   const data = getRoadmapData()
+
+  function quarterSummary(q) {
+    if (!q.goals.length) return ''
+    const counts = {all:0,show:0,stage:0,sphere:0}
+    q.goals.forEach(g => { counts[g.theme] = (counts[g.theme]||0)+1 })
+    const dims = ['show','stage','sphere'].filter(t => counts[t])
+    const cap = s => s[0].toUpperCase()+s.slice(1)
+    let prose
+    if (dims.length === 3) {
+      prose = counts.all ? 'All dimensions active — a fully loaded quarter.' : 'Show, Stage, and Sphere all pushing forward.'
+    } else if (dims.length === 2) {
+      prose = `${cap(dims[0])} and ${cap(dims[1])} take the lead${counts.all ? ', grounded in cross-cutting work' : ''}.`
+    } else if (dims.length === 1) {
+      prose = `${cap(dims[0])}-focused quarter${counts.all ? ', with cross-cutting foundations alongside' : ''}.`
+    } else {
+      prose = 'Program-wide setup and alignment.'
+    }
+    const chips = ['all','show','stage','sphere'].filter(t => counts[t])
+      .map(t => `<span class="roadmap-theme-tag ${t}">${cap(t)}</span>`).join('')
+    return `<div class="roadmap-summary">
+      <div class="roadmap-summary__prose">${prose}</div>
+      <div class="roadmap-summary__chips">${chips}</div>
+    </div>`
+  }
 
   function goalHtml(g) {
     const dotColor = g.theme==='show' ? 'var(--show)' : g.theme==='stage' ? 'var(--stage)' : g.theme==='sphere' ? 'var(--sphere)' : 'var(--gold)'
@@ -1893,9 +2006,11 @@ function renderRoadmap() {
     </div>`
   }
 
-  function col(q, isFirst, isLast, isCurrent) {
+  function col(q, isFirst, isLast, isCurrent, isFuture) {
+    const cls = 'roadmap-col' + (isCurrent ? ' roadmap-col--now' : '') + (isFuture ? ' roadmap-col--future' : '')
+    const rightInvisible = isLast && !isFuture
     return `
-    <div class="roadmap-col${isCurrent ? ' roadmap-col--now' : ''}">
+    <div class="${cls}">
       <div class="roadmap-col__header">
         <div class="roadmap-col__label">${q.label}</div>
         <div class="roadmap-col__name">${q.name}</div>
@@ -1904,12 +2019,13 @@ function renderRoadmap() {
       <div class="roadmap-col__track">
         <div class="roadmap-track-line${isFirst ? ' invisible' : ''}"></div>
         <div class="roadmap-track-dot"></div>
-        <div class="roadmap-track-line${isLast ? ' invisible' : ''}"></div>
+        <div class="roadmap-track-line${rightInvisible ? ' invisible' : ''}"></div>
       </div>
-      <div class="roadmap-col__connector"></div>
+      ${isFuture ? '' : `<div class="roadmap-col__connector"></div>
       <div class="roadmap-card">
-        <div class="roadmap-goals">${q.goals.map(goalHtml).join('')}</div>
-      </div>
+        ${quarterSummary(q)}
+        <div class="roadmap-goals">${[...q.goals].sort((a,b)=>['all','show','stage','sphere'].indexOf(a.theme)-['all','show','stage','sphere'].indexOf(b.theme)).map(goalHtml).join('')}</div>
+      </div>`}
     </div>`
   }
 
@@ -1923,9 +2039,10 @@ function renderRoadmap() {
   </div>
   <p class="roadmap-vision">${esc(data.vision)}</p>
   <div class="roadmap-cols">
-    ${col(data.quarters[0], true,  false, true)}
-    ${col(data.quarters[1], false, false, false)}
-    ${col(data.quarters[2], false, true,  false)}
+    ${col(data.quarters[0], true,  false, true,  false)}
+    ${col(data.quarters[1], false, false, false, false)}
+    ${col(data.quarters[2], false, false, false, false)}
+    ${col(data.quarters[3], false, true,  false, true)}
   </div>`
 }
 
