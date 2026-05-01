@@ -568,6 +568,7 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-auth-compat.js"></script>
 </head>
 <body>
 <div id="undo-toast" class="undo-toast">
@@ -811,7 +812,9 @@ try {
   firebase.initializeApp(FIREBASE_CONFIG)
   db  = firebase.firestore()
   DOC = db.collection('studio').doc('presence')
-} catch(e) { console.warn('Firebase init failed (config not set?):', e) }
+  // Sign in anonymously so every visitor has an auth token (satisfies security rules)
+  firebase.auth().signInAnonymously().catch(e => console.warn('Auth failed:', e))
+} catch(e) { console.warn('Firebase init failed:', e) }
 
 // ── State ────────────────────────────────────────────────────────────────────
 const KEY = 'studiopresence-tracker-v4'
