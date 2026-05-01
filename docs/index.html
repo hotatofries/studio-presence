@@ -160,6 +160,23 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .ms-label.editable { cursor: text; }
 .ms-label.is-editing { background: rgba(217,159,24,.08); border-radius: 3px; padding: 1px 4px; }
 .ms-date-tag { font-size: .62rem; color: var(--muted); white-space: nowrap; letter-spacing: .03em; margin-top: 3px; }
+.ms-date-tag.editable { cursor: pointer; }
+.ms-date-tag.editable:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+
+/* ── Mini date picker calendar ── */
+#mini-cal { position: fixed; z-index: 9999; background: var(--paper); border: 1px solid rgba(42,24,0,.15); border-radius: 10px; box-shadow: 0 6px 28px rgba(42,24,0,.14); padding: 12px; width: 216px; display: none; font-family: 'DM Mono', monospace; }
+#mini-cal.open { display: block; }
+.mini-cal__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.mini-cal__nav { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 1rem; padding: 2px 7px; border-radius: 4px; transition: color .12s; line-height: 1; }
+.mini-cal__nav:hover { color: var(--ink); }
+.mini-cal__month { font-size: .68rem; font-weight: 500; color: var(--ink); letter-spacing: .04em; }
+.mini-cal__grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.mini-cal__dow { font-size: .54rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: center; padding: 3px 0 6px; opacity: .65; }
+.mini-cal__day { font-size: .65rem; text-align: center; padding: 5px 2px; border-radius: 50%; cursor: pointer; color: var(--ink); transition: background .1s; user-select: none; }
+.mini-cal__day:hover:not(.mini-cal__day--empty) { background: rgba(42,24,0,.08); }
+.mini-cal__day--today { color: var(--gold); font-weight: 500; }
+.mini-cal__day--selected { background: var(--ink) !important; color: var(--paper) !important; }
+.mini-cal__day--empty { cursor: default; }
 .ms-area-tag { font-size: .6rem; color: var(--muted); background: rgba(42,24,0,.06); padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
 .ms-progress { display: inline-flex; align-items: center; font-size: .62rem; padding: 2px 8px; border-radius: 10px; cursor: pointer; user-select: none; transition: opacity .12s; white-space: nowrap; min-width: 40px; justify-content: center; border: 1px solid transparent; }
 .ms-progress:hover { opacity: .7; }
@@ -811,28 +828,54 @@ try {
 } catch(e) {}
 // Fetch live state then subscribe to real-time updates
 if (DOC) {
+  function setupFirestoreListener() {
+    if (_remoteListenerActive) return
+    _remoteListenerActive = true
+    DOC.onSnapshot(snap => {
+      if (!snap.exists()) return
+      const p = snap.data()
+      if (p.v === 4 && p.updatedAt !== state.updatedAt) {
+        state = { ...defaultState(), ...p }
+        localStorage.setItem(KEY, JSON.stringify(state))
+        render()
+      }
+    }, err => {
+      console.warn('onSnapshot error, retrying in 10s:', err)
+      _remoteListenerActive = false
+      setTimeout(setupFirestoreListener, 10000)
+    })
+  }
   DOC.get().then(snap => {
     if (snap.exists()) {
       const p = snap.data()
       if (p.v === 4) {
         state = { ...defaultState(), ...p }
         _firestoreLoadedState = { ...state }
+        localStorage.setItem(KEY, JSON.stringify(state))
         render()
-        // Immediately snapshot what Firestore had — safety net before any user edits
         DOC.collection('backups').doc('load-' + String(Date.now())).set({ ...state, _savedAt: Date.now() })
           .catch(() => {})
       }
     }
     _firestoreReady = true
-    if (!_remoteListenerActive) {
-      _remoteListenerActive = true
-      DOC.onSnapshot(snap => {
-        if (!snap.exists()) return
-        const p = snap.data()
-        if (p.v === 4 && p.updatedAt !== state.updatedAt) { state = { ...defaultState(), ...p }; render() }
-      })
-    }
-  }).catch(e => { console.warn('Firestore load failed, using local state:', e); _firestoreReady = true })
+    setupFirestoreListener()
+  }).catch(e => {
+    console.warn('Firestore load failed, retrying in 5s:', e)
+    // Still set up listener even if initial get failed — it will deliver current state
+    _firestoreReady = true
+    setupFirestoreListener()
+    // Retry the initial get after 5s to pick up any data we missed
+    setTimeout(() => DOC.get().then(snap => {
+      if (!snap.exists()) return
+      const p = snap.data()
+      if (p.v === 4 && p.updatedAt !== state.updatedAt) {
+        state = { ...defaultState(), ...p }
+        _firestoreLoadedState = { ...state }
+        localStorage.setItem(KEY, JSON.stringify(state))
+        render()
+      }
+    }).catch(() => {}), 5000)
+  })
 }
 function save() {
   state.updatedAt = Date.now()
@@ -1178,7 +1221,7 @@ function msRowHTML(ms, opts = {}) {
         ${esc(ms.label)}</span>
       ${opts.showArea && areaInfo ? `<span class="ms-area-tag">${esc(areaInfo.title)}</span>` : ''}
       ${dri ? avatarWrapHTML(dri.avatar, dri.name, 18) : ''}
-      <span class="ms-date-tag">${formatDate(ms.date)}</span>
+      <span class="ms-date-tag${isEditable ? ' editable' : ''}"${isEditable ? ` onclick="openMiniCal('${ms.id}', this)"` : ''}>${formatDate(ms.date)}</span>
       ${progressPillHTML(ms.id, ms.progress)}
       ${outputBtn}
       ${isEditable ? `<button class="ms-delete" onclick="deleteMs('${ms.id}')" title="Remove">✕</button>` : ''}
@@ -1751,7 +1794,7 @@ function renderDim(dimKey) {
   const outputsHTML = allOuts.map(out => {
     const missionText = (out.id in state.missions && state.missions[out.id] !== undefined) ? (state.missions[out.id] ?? '') : out.defaultMission
     const areaPct = areaAvgProgress(out.id)
-    const ms = state.milestones.filter(m => m.area === out.id)
+    const ms = state.milestones.filter(m => m.area === out.id).sort((a, b) => (a.date || '').localeCompare(b.date || ''))
     const headBarHTML = `<div class="output-card__head-bar"><div class="head-pbar"><div class="head-pbar__fill" style="width:${areaPct ?? 0}%;background:${dim.color}"></div></div><span class="head-pbar-pct">${areaPct !== null ? `${areaPct}%` : '—'}</span></div>`
     const displayTitle = out.isCustom ? out.title : (state.areaNames?.[out.id] || out.title)
     const titleHTML = out.isCustom
@@ -2275,6 +2318,80 @@ function render() {
 }
 
 render()
+
+// ── Mini calendar ─────────────────────────────────────────────────────────────
+let _miniCalMsId = null, _miniCalYear = null, _miniCalMonth = null
+
+function openMiniCal(msId, anchorEl) {
+  _miniCalMsId = msId
+  const ms = state.milestones.find(x => x.id === msId)
+  if (!ms) return
+  const d = ms.date || today()
+  _miniCalYear = parseInt(d.slice(0,4), 10)
+  _miniCalMonth = parseInt(d.slice(5,7), 10)
+  renderMiniCal()
+  const cal = document.getElementById('mini-cal')
+  cal.classList.add('open')
+  const rect = anchorEl.getBoundingClientRect()
+  const calW = 216, calH = 240
+  let top = rect.bottom + 6, left = rect.left
+  if (left + calW > window.innerWidth - 8) left = window.innerWidth - calW - 8
+  if (top + calH > window.innerHeight - 8) top = rect.top - calH - 4
+  cal.style.top = top + 'px'
+  cal.style.left = left + 'px'
+}
+
+function closeMiniCal() {
+  document.getElementById('mini-cal').classList.remove('open')
+  _miniCalMsId = null
+}
+
+function renderMiniCal() {
+  const cal = document.getElementById('mini-cal')
+  const ms = _miniCalMsId ? state.milestones.find(x => x.id === _miniCalMsId) : null
+  const selectedDate = ms ? ms.date : null
+  const todayStr = today()
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+  const firstDow = new Date(_miniCalYear, _miniCalMonth - 1, 1).getDay()
+  const daysInMonth = new Date(_miniCalYear, _miniCalMonth, 0).getDate()
+  const startOffset = (firstDow + 6) % 7
+  const dows = ['Mo','Tu','We','Th','Fr','Sa','Su'].map(d => `<div class="mini-cal__dow">${d}</div>`).join('')
+  let cells = Array.from({length: startOffset}, () => `<div class="mini-cal__day mini-cal__day--empty"></div>`).join('')
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${_miniCalYear}-${String(_miniCalMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+    const cls = ['mini-cal__day', ds === todayStr ? 'mini-cal__day--today' : '', ds === selectedDate ? 'mini-cal__day--selected' : ''].filter(Boolean).join(' ')
+    cells += `<div class="${cls}" onclick="pickMiniCalDate('${ds}')">${d}</div>`
+  }
+  cal.innerHTML = `<div class="mini-cal__header"><button class="mini-cal__nav" onclick="shiftMiniCal(-1)">‹</button><span class="mini-cal__month">${MONTHS[_miniCalMonth-1]} ${_miniCalYear}</span><button class="mini-cal__nav" onclick="shiftMiniCal(1)">›</button></div><div class="mini-cal__grid">${dows}${cells}</div>`
+}
+
+function shiftMiniCal(dir) {
+  _miniCalMonth += dir
+  if (_miniCalMonth > 12) { _miniCalMonth = 1; _miniCalYear++ }
+  if (_miniCalMonth < 1)  { _miniCalMonth = 12; _miniCalYear-- }
+  renderMiniCal()
+}
+
+function pickMiniCalDate(dateStr) {
+  if (!_miniCalMsId) return
+  const ms = state.milestones.find(x => x.id === _miniCalMsId)
+  if (!ms) return
+  ms.date = dateStr
+  closeMiniCal()
+  save(); render()
+}
+
+document.addEventListener('click', e => {
+  const cal = document.getElementById('mini-cal')
+  if (cal && cal.classList.contains('open') && !cal.contains(e.target) && !e.target.classList.contains('ms-date-tag')) {
+    closeMiniCal()
+  }
+}, true)
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeMiniCal()
+})
 </script>
+<div id="mini-cal"></div>
 </body>
 </html>
