@@ -542,11 +542,21 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .rm-goal-row.dragging { opacity:.35; }
 .rm-goal-row.drag-before { border-top:2px solid var(--gold) !important; }
 .rm-goal-row.drag-after  { border-bottom:2px solid var(--gold) !important; }
+
+/* ── Undo toast ── */
+.undo-toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px); background: #2a1800; color: #fff; border-radius: 10px; padding: 10px 14px 10px 20px; display: flex; align-items: center; gap: 14px; font-size: .75rem; font-family: 'DM Mono', monospace; opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; z-index: 9999; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,.28); }
+.undo-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+.undo-toast__btn { background: none; border: 1px solid rgba(255,255,255,.35); color: #fff; border-radius: 6px; padding: 4px 12px; font-family: 'DM Mono', monospace; font-size: .69rem; cursor: pointer; transition: background .12s; }
+.undo-toast__btn:hover { background: rgba(255,255,255,.14); }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
+<div id="undo-toast" class="undo-toast">
+  <span id="undo-toast-label">Removed.</span>
+  <button class="undo-toast__btn" onclick="undoDelete()">Undo</button>
+</div>
 
 <nav class="sidebar" id="sidebar">
   <div class="sidebar__logo">Studio Presence<span>Design · DD / Wolt / Roo</span></div>
@@ -730,10 +740,10 @@ const TEAM = [
   { userId:'U08D18U0UAC', name:'Kaylee Reynolds',       title:'Designer, Growth',                             avatar:'https://avatars.slack-edge.com/2025-07-06/9142056957799_c9ef73b2c24f679c92f1_original.png' },
   { userId:'UQ18LGSGL',   name:'Julio Sotomayor',       title:'Sr. Graphic Designer',                         avatar:'https://avatars.slack-edge.com/2025-02-21/8493662073682_44e2c574e52b64e58f22_original.png' },
   // Recruiters
-  { userId:'U01BPH1H7TQ', name:'Emma Bergmann',         title:'Sr. Technical Recruiter',                      avatar:'' },
-  { userId:'U01V80VA5SR', name:'Kenzie Mabrey',          title:'Technical Recruiter II',                       avatar:'' },
-  { userId:'UKHMP7BGR',   name:'Logan Scott',            title:'Technical Sourcer II',                         avatar:'' },
-  { userId:'U020UK1N46B', name:'Vanessa Chui',           title:'Chief of Staff',                               avatar:'' },
+  { userId:'U01BPH1H7TQ', name:'Emma Bergmann',         title:'Sr. Technical Recruiter',                      avatar:'https://avatars.slack-edge.com/2026-04-20/10940737232439_d853bcf44b8cbf269202_original.jpg' },
+  { userId:'U01V80VA5SR', name:'Kenzie Mabrey',          title:'Technical Recruiter II',                       avatar:'https://avatars.slack-edge.com/2023-05-18/5290566636146_d591f2403b54c37fce6d_original.png' },
+  { userId:'UKHMP7BGR',   name:'Logan Scott',            title:'Technical Sourcer II',                         avatar:'https://avatars.slack-edge.com/2020-03-27/1034222112087_9ffde44fd66a7daabb73_original.jpg' },
+  { userId:'U020UK1N46B', name:'Vanessa Chui',           title:'Chief of Staff',                               avatar:'https://avatars.slack-edge.com/2026-04-13/10918786271585_b59614f37109d49c0795_original.png' },
 ]
 
 // ── Dims ─────────────────────────────────────────────────────────────────────
@@ -827,21 +837,24 @@ function save() {
       state.roadmap !== null
     if (!hasData && !_userHasMadeChanges) return
     DOC.set(state).catch(e => console.warn('Firestore write failed:', e))
-    // Write a timestamped backup — keeps last 20 saves for recovery
-    const backupCol = db.collection('studio_backups')
-    backupCol.add({ ...state, _savedAt: Date.now() })
-      .then(ref => {
-        // Prune old backups beyond 20
-        backupCol.orderBy('_savedAt').get().then(snap => {
-          if (snap.size > 20) {
-            snap.docs.slice(0, snap.size - 20).forEach(d => d.ref.delete())
-          }
+    // Write a timestamped backup snapshot — max once per 10 minutes, keeps last 20 days
+    const now = Date.now()
+    if (now - _lastBackupAt >= 10 * 60 * 1000) {
+      _lastBackupAt = now
+      const backupCol = DOC.collection('backups')
+      const cutoff = now - 20 * 24 * 60 * 60 * 1000
+      backupCol.doc(String(now)).set({ ...state, _savedAt: now })
+        .then(() => {
+          backupCol.orderBy('_savedAt').endBefore(cutoff).get().then(snap => {
+            snap.docs.forEach(d => d.ref.delete())
+          })
         })
-      })
-      .catch(() => {})
+        .catch(() => {})
+    }
   }
 }
 let _userHasMadeChanges = false
+let _lastBackupAt = 0
 // Mark that the user has intentionally interacted — allows save() to write empty state if they cleared everything
 document.addEventListener('click', () => { _userHasMadeChanges = true }, { once: true })
 
@@ -900,8 +913,9 @@ function driChipHTML(id, mapKey) {
   if (!dri) {
     return `<span class="dri-chip" data-dri-id="${esc(id)}" data-dri-map="${mapKey}">${USER_SVG}<span>Add DRI</span></span>`
   }
+  const avatar = dri.avatar || (TEAM.find(p => p.userId === dri.userId)?.avatar) || ''
   return `<span class="dri-chip has-dri" data-dri-id="${esc(id)}" data-dri-map="${mapKey}">
-    ${avatarWrapHTML(dri.avatar, dri.name, 20)}
+    ${avatarWrapHTML(avatar, dri.name, 20)}
     <span>${esc(dri.name)}</span>
   </span>`
 }
@@ -1209,9 +1223,39 @@ function saveMilestone(dimKey, areaId) {
   save(); render()
 }
 
+// ── Undo toast ────────────────────────────────────────────────────────────────
+let _undoPending = null
+
+function showUndoToast(message, onUndo) {
+  if (_undoPending?.timer) clearTimeout(_undoPending.timer)
+  document.getElementById('undo-toast-label').textContent = message
+  document.getElementById('undo-toast').classList.add('visible')
+  _undoPending = {
+    onUndo,
+    timer: setTimeout(() => {
+      document.getElementById('undo-toast').classList.remove('visible')
+      _undoPending = null
+    }, 7000)
+  }
+}
+
+function undoDelete() {
+  if (!_undoPending) return
+  clearTimeout(_undoPending.timer)
+  document.getElementById('undo-toast').classList.remove('visible')
+  _undoPending.onUndo()
+  _undoPending = null
+}
+
 function deleteMs(msId) {
+  const ms = state.milestones.find(m => m.id === msId)
+  if (!ms) return
   state.milestones = state.milestones.filter(m => m.id !== msId)
   save(); render()
+  showUndoToast('Milestone removed.', () => {
+    state.milestones.push(ms)
+    save(); render()
+  })
 }
 
 function startMsEdit(msId, el) {
@@ -1279,9 +1323,15 @@ function cancelDeleteOutput(id) {
 }
 
 function clearMission(areaId) {
+  const prev = state.missions[areaId]
   state.missions[areaId] = null
-  save()
-  render()
+  save(); render()
+  if (prev) {
+    showUndoToast('Mission cleared.', () => {
+      state.missions[areaId] = prev
+      save(); render()
+    })
+  }
 }
 
 function handleCardDel(id) {
@@ -1289,6 +1339,13 @@ function handleCardDel(id) {
 }
 
 function confirmDeleteOutput(id, dimKey) {
+  const snapMilestones    = JSON.parse(JSON.stringify(state.milestones))
+  const snapMissions      = JSON.parse(JSON.stringify(state.missions))
+  const snapAreaOwners    = JSON.parse(JSON.stringify(state.areaOwners || {}))
+  const snapHiddenAreas   = JSON.parse(JSON.stringify(state.hiddenAreas || []))
+  const snapCustomOutputs = JSON.parse(JSON.stringify(state.customOutputs || {}))
+  const snapAreaMapEntry  = AREA_MAP[id] ? { [id]: AREA_MAP[id] } : null
+
   const isCustom = DIMS.flatMap(d => (state.customOutputs?.[d.key] || [])).some(o => o.id === id)
   if (isCustom) {
     if (!state.customOutputs) return
@@ -1307,8 +1364,18 @@ function confirmDeleteOutput(id, dimKey) {
   delete state.missions[id]
   delete state.areaOwners[id]
   state.milestones = state.milestones.filter(m => m.area !== id)
-  save()
-  render()
+  save(); render()
+
+  const areaName = snapAreaMapEntry ? (snapAreaMapEntry[id]?.title || id) : id
+  showUndoToast(`"${areaName}" removed.`, () => {
+    state.milestones    = snapMilestones
+    state.missions      = snapMissions
+    state.areaOwners    = snapAreaOwners
+    state.hiddenAreas   = snapHiddenAreas
+    state.customOutputs = snapCustomOutputs
+    if (snapAreaMapEntry) Object.assign(AREA_MAP, snapAreaMapEntry)
+    save(); render()
+  })
 }
 
 function focusMission(areaId) {
