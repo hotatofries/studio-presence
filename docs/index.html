@@ -803,6 +803,7 @@ function defaultState() {
 }
 let state = defaultState()
 let _firestoreReady = !DOC  // if no Firestore, treat as ready immediately
+let _firestoreLoadedState = null  // snapshot of what Firestore had on load — used to block regressions
 // Warm-start from localStorage so the UI isn't blank while Firestore loads
 try {
   const raw = localStorage.getItem(KEY)
@@ -813,7 +814,14 @@ if (DOC) {
   DOC.get().then(snap => {
     if (snap.exists()) {
       const p = snap.data()
-      if (p.v === 4) { state = { ...defaultState(), ...p }; render() }
+      if (p.v === 4) {
+        state = { ...defaultState(), ...p }
+        _firestoreLoadedState = { ...state }
+        render()
+        // Immediately snapshot what Firestore had — safety net before any user edits
+        DOC.collection('backups').doc('load-' + String(Date.now())).set({ ...state, _savedAt: Date.now() })
+          .catch(() => {})
+      }
     }
     _firestoreReady = true
     if (!_remoteListenerActive) {
@@ -836,10 +844,20 @@ function save() {
       Object.keys(state.dimOwners).length > 0 ||
       state.roadmap !== null
     if (!hasData && !_userHasMadeChanges) return
+    // Regression guard: never write a state that loses roadmap/milestones data Firestore had on load
+    if (_firestoreLoadedState) {
+      const loadHadRoadmap = _firestoreLoadedState.roadmap !== null
+      const loadHadMilestones = (_firestoreLoadedState.milestones || []).length > 0
+      if ((loadHadRoadmap && state.roadmap === null) ||
+          (loadHadMilestones && state.milestones.length === 0 && !_userHasMadeChanges)) {
+        console.warn('Blocked regression write — would have wiped Firestore data')
+        return
+      }
+    }
     DOC.set(state).catch(e => console.warn('Firestore write failed:', e))
-    // Write a timestamped backup snapshot — max once per 10 minutes, keeps last 20 days
+    // Write a timestamped backup snapshot — max once per minute, keeps last 20 days
     const now = Date.now()
-    if (now - _lastBackupAt >= 10 * 60 * 1000) {
+    if (now - _lastBackupAt >= 60 * 1000) {
       _lastBackupAt = now
       const backupCol = DOC.collection('backups')
       const cutoff = now - 20 * 24 * 60 * 60 * 1000
