@@ -38,6 +38,33 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .nav-item[data-view="stage"].active  .nav-dot { background: var(--stage);  }
 .nav-item[data-view="sphere"].active { border-left-color: var(--sphere); }
 .nav-item[data-view="sphere"].active .nav-dot { background: var(--sphere); }
+.nav-item[data-view="roadmap"].active { border-left-color: var(--gold); }
+
+/* ── Roadmap view ── */
+.roadmap-vision { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 400; font-style: italic; color: var(--muted); line-height: 1.7; margin-top: -20px; margin-bottom: 48px; padding-bottom: 28px; border-bottom: 1px solid var(--rule); }
+.roadmap-cols { display: flex; gap: 0; align-items: flex-start; }
+.roadmap-col { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.roadmap-col__header { text-align: center; padding: 0 12px 22px; }
+.roadmap-col__label { font-size: .56rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+.roadmap-col__name { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 500; color: var(--surface); line-height: 1; }
+.roadmap-col__dates { font-size: .62rem; color: var(--muted); margin-top: 6px; letter-spacing: .04em; }
+.roadmap-col__track { display: flex; align-items: center; width: 100%; }
+.roadmap-track-line { flex: 1; height: 1px; background: var(--rule); }
+.roadmap-track-line.invisible { background: transparent; }
+.roadmap-track-dot { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid rgba(42,24,0,.25); background: var(--paper); flex-shrink: 0; position: relative; z-index: 2; }
+.roadmap-col--now .roadmap-track-dot { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 4px rgba(217,159,24,.15); }
+.roadmap-col__connector { width: 1px; height: 24px; background: var(--rule); }
+.roadmap-card { width: calc(100% - 24px); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.roadmap-goals { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+.roadmap-goal { display: flex; align-items: flex-start; gap: 9px; }
+.roadmap-goal__dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.roadmap-goal__title { font-size: .76rem; color: var(--ink); line-height: 1.4; font-weight: 500; }
+.roadmap-goal__sub { font-size: .67rem; color: var(--muted); line-height: 1.5; margin-top: 2px; }
+.roadmap-theme-tag { display: inline-block; font-size: .54rem; letter-spacing: .1em; text-transform: uppercase; padding: 2px 7px; border-radius: 8px; margin-top: 4px; }
+.roadmap-theme-tag.show   { color: var(--show);   background: rgba(201,146,12,.1); }
+.roadmap-theme-tag.stage  { color: var(--stage);  background: rgba(59,96,136,.1); }
+.roadmap-theme-tag.sphere { color: var(--sphere); background: rgba(45,106,79,.1); }
+.roadmap-theme-tag.all    { color: var(--muted);  background: rgba(42,24,0,.06); }
 .nav-divider { height: 1px; background: rgba(255,255,255,.07); margin: 10px 20px; }
 .nav-pct { margin-left: auto; font-size: .62rem; color: rgba(255,255,255,.28); letter-spacing: 0; text-transform: none; display: flex; align-items: center; gap: 6px; }
 .nav-pct .dri-avatar-wrap img { border-radius: 50%; opacity: .75; }
@@ -243,7 +270,7 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .output-card__head-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .output-card__del-btn { display: none; background: none; border: none; cursor: pointer; color: var(--muted); padding: 5px 7px; border-radius: 5px; align-items: center; font-size: .75rem; line-height: 1; }
 .output-card__del-btn:hover { color: #b03030; background: rgba(176,48,48,.07); }
-.output-card__confirm-bar { display: none; align-items: center; gap: 10px; padding: 11px 18px; border-top: 1px solid rgba(176,48,48,.14); background: rgba(176,48,48,.03); font-size: .72rem; color: var(--muted); }
+.output-card__confirm-bar { display: none; align-items: center; gap: 10px; padding: 11px 18px; border-bottom: 1px solid rgba(176,48,48,.14); background: rgba(176,48,48,.03); font-size: .72rem; color: var(--muted); }
 .output-card__confirm-bar.visible { display: flex; }
 .btn-confirm-del { background: #b03030; color: #fff; border: none; border-radius: 6px; padding: 6px 14px; font-family: 'DM Mono', monospace; font-size: .69rem; cursor: pointer; transition: opacity .13s; }
 .btn-confirm-del:hover { opacity: .82; }
@@ -413,6 +440,96 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 .output-card__title--editable:hover { background: rgba(217,159,24,.07); }
 .output-card__title--editable:focus { background: rgba(217,159,24,.12); }
 .output-card__title--editable:empty::before { content: 'Area title…'; opacity: .35; font-weight: 400; }
+
+/* ── Vision page ── */
+.vision-wrap { padding-bottom: 24px; }
+.vision-kicker { font-size: .55rem; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); margin-bottom: 18px; }
+.vision-headline { font-family: 'Cormorant Garamond', serif; font-size: 5.2rem; font-weight: 400; font-style: italic; line-height: .9; color: var(--surface); margin-bottom: 40px; letter-spacing: -.01em; padding-bottom: 40px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+
+/* Funnel */
+.vision-funnel-section { margin-bottom: 40px; padding-bottom: 40px; border-bottom: 1px solid var(--rule); }
+.vision-funnel-intro { display: grid; grid-template-columns: 110px 1fr; gap: 28px; margin-bottom: 24px; align-items: start; }
+.vision-funnel-intro__label { font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); padding-top: 3px; line-height: 1.7; }
+.vision-funnel-intro__text { font-size: .8rem; line-height: 1.8; color: var(--ink); }
+.funnel-entry { background: var(--surface); border-radius: 10px; padding: 22px 28px; }
+.funnel-entry__tag { font-size: .5rem; letter-spacing: .18em; text-transform: uppercase; color: rgba(217,159,24,.6); margin-bottom: 7px; }
+.funnel-entry__name { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 500; color: #fff; line-height: 1.1; margin-bottom: 5px; }
+.funnel-entry__desc { font-size: .62rem; color: rgba(255,255,255,.65); }
+.funnel-down { display: flex; align-items: center; gap: 10px; padding: 6px 0; color: rgba(42,24,0,.22); font-size: .65rem; }
+.funnel-down__line { flex: 1; height: 1px; background: var(--rule); }
+.funnel-stages { display: flex; align-items: stretch; gap: 4px; }
+.funnel-pipe { flex: 1; border: 1px solid var(--rule); border-radius: 8px; padding: 14px 11px 12px; min-width: 0; }
+.funnel-pipe--origin { background: var(--surface); border-color: var(--surface); }
+.funnel-pipe--hire { background: rgba(45,106,79,.06); border-color: rgba(45,106,79,.18); }
+.funnel-pipe__tag { font-size: .5rem; letter-spacing: .16em; text-transform: uppercase; color: rgba(42,24,0,.22); margin-bottom: 9px; }
+.funnel-pipe--origin .funnel-pipe__tag { color: rgba(217,159,24,.6); }
+.funnel-pipe--hire .funnel-pipe__tag { color: rgba(45,106,79,.5); }
+.funnel-pipe__name { font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 500; color: var(--surface); line-height: 1.15; margin-bottom: 5px; }
+.funnel-pipe--origin .funnel-pipe__name { color: #fff; }
+.funnel-pipe--hire .funnel-pipe__name { color: #1e5e3a; }
+.funnel-pipe--origin .funnel-pipe__desc { color: rgba(255,255,255,.55); }
+.funnel-pipe__desc { font-size: .58rem; color: var(--muted); line-height: 1.55; }
+.funnel-arrow { display: flex; align-items: center; color: rgba(42,24,0,.2); font-size: .8rem; flex-shrink: 0; }
+
+/* Design 2028 */
+.vision-2028 { display: grid; grid-template-columns: 110px 1fr; gap: 28px; margin-bottom: 40px; padding-bottom: 40px; border-bottom: 1px solid var(--rule); align-items: start; }
+.vision-2028__label { font-size: .52rem; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); padding-top: 3px; line-height: 1.7; }
+.vision-2028__body { font-size: .82rem; line-height: 1.85; color: var(--ink); }
+.vision-2028__body strong { font-weight: 500; color: var(--surface); }
+
+/* Goals */
+.vision-goals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+.vision-goal { background: var(--paper); padding: 28px 22px; position: relative; }
+.vision-goal::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--gold); opacity: .3; }
+.vision-goal__num { font-family: 'Cormorant Garamond', serif; font-size: 1.7rem; font-weight: 400; color: var(--gold); line-height: 1; margin-bottom: 14px; opacity: .55; }
+.vision-goal__title { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 500; color: var(--surface); margin-bottom: 9px; line-height: 1.2; }
+.vision-goal__body { font-size: .68rem; line-height: 1.75; color: var(--muted); }
+
+/* Test + attribution */
+.vision-test { background: var(--surface); border-radius: 10px; padding: 36px 40px; margin-bottom: 28px; }
+.vision-test__eyebrow { font-size: .52rem; letter-spacing: .2em; text-transform: uppercase; color: rgba(217,159,24,.55); margin-bottom: 10px; }
+.vision-test__q { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 500; color: #fff; line-height: 1.1; margin-bottom: 12px; }
+.vision-test__a { font-size: .72rem; color: rgba(255,255,255,.42); line-height: 1.75; max-width: 440px; }
+.vision-attribution { border-left: 2px solid var(--gold); padding-left: 18px; }
+.vision-attribution__text { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-style: italic; color: var(--muted); line-height: 1.6; }
+.vision-attribution__by { font-size: .56rem; letter-spacing: .13em; text-transform: uppercase; color: var(--muted); opacity: .5; margin-top: 9px; }
+
+/* ── Roadmap edit modal ── */
+.roadmap-modal { display:none; position:fixed; inset:0; z-index:8000; align-items:center; justify-content:center; }
+.roadmap-modal.open { display:flex; }
+.roadmap-modal__backdrop { position:absolute; inset:0; background:rgba(26,12,0,.52); }
+.roadmap-modal__dialog { position:relative; background:var(--paper); border:1px solid var(--rule); border-radius:14px; width:680px; max-width:calc(100vw - 48px); max-height:calc(100vh - 60px); display:flex; flex-direction:column; box-shadow:0 16px 56px rgba(42,24,0,.22); }
+.roadmap-modal__head { display:flex; align-items:center; padding:18px 24px 14px; border-bottom:1px solid var(--rule); flex-shrink:0; }
+.roadmap-modal__title { font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:500; color:var(--surface); flex:1; }
+.roadmap-modal__close { background:none; border:none; cursor:pointer; color:var(--muted); font-size:1rem; padding:4px 7px; line-height:1; border-radius:4px; transition:color .12s; }
+.roadmap-modal__close:hover { color:var(--ink); }
+.roadmap-modal__body { flex:1; min-height:0; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:20px; }
+.roadmap-modal__body > * { flex-shrink:0; }
+.roadmap-modal__foot { display:flex; align-items:center; gap:8px; padding:14px 24px; border-top:1px solid var(--rule); flex-shrink:0; }
+.rm-label { font-size:.56rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.rm-textarea { width:100%; background:rgba(42,24,0,.04); border:1px solid var(--rule); border-radius:7px; padding:9px 12px; font-family:'Cormorant Garamond',serif; font-size:.97rem; font-style:italic; color:var(--ink); line-height:1.65; outline:none; resize:vertical; transition:border-color .13s; }
+.rm-textarea:focus { border-color:var(--gold); }
+.rm-quarter { border:1px solid var(--rule); border-radius:10px; overflow:hidden; }
+.rm-quarter__head { padding:9px 14px; background:rgba(42,24,0,.02); border-bottom:1px solid var(--rule); display:flex; align-items:center; gap:8px; cursor:pointer; user-select:none; }
+.rm-chevron { margin-left:auto; color:var(--muted); transition:transform .2s; flex-shrink:0; }
+.rm-quarter.collapsed .rm-chevron { transform:rotate(-90deg); }
+.rm-quarter.collapsed .rm-goals-list,
+.rm-quarter.collapsed .rm-add-btn { display:none; }
+.rm-quarter__name { font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:500; color:var(--surface); }
+.rm-quarter__meta { font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.rm-goals-list { padding:10px 14px; display:flex; flex-direction:column; gap:6px; max-height:240px; overflow-y:auto; }
+.rm-goal-row { display:flex; align-items:flex-start; gap:8px; padding:8px 10px; background:rgba(42,24,0,.02); border-radius:7px; border:1px solid transparent; }
+.rm-goal-row:focus-within { border-color:rgba(217,159,24,.3); background:rgba(217,159,24,.04); }
+.rm-goal-fields { flex:1; display:flex; flex-direction:column; gap:3px; }
+.rm-input { width:100%; background:none; border:none; outline:none; font-family:'DM Mono',monospace; color:var(--ink); padding:1px 0; }
+.rm-input::placeholder { color:var(--muted); opacity:.55; }
+.rm-title-input { font-size:.75rem; font-weight:500; }
+.rm-sub-input { font-size:.66rem; color:var(--muted); }
+.rm-theme-select { background:rgba(42,24,0,.05); border:1px solid var(--rule); border-radius:6px; font-family:'DM Mono',monospace; font-size:.58rem; color:var(--muted); padding:2px 6px; outline:none; cursor:pointer; align-self:flex-start; margin-top:3px; }
+.rm-goal-del { background:none; border:none; cursor:pointer; color:rgba(42,24,0,.18); padding:2px 4px; line-height:1; border-radius:4px; transition:color .12s; flex-shrink:0; font-size:.75rem; margin-top:2px; }
+.rm-goal-del:hover { color:#b03030; }
+.rm-add-btn { display:flex; align-items:center; gap:5px; background:none; border:none; cursor:pointer; font-family:'DM Mono',monospace; font-size:.67rem; color:var(--muted); padding:7px 14px 10px; transition:color .13s; }
+.rm-add-btn:hover { color:var(--gold); }
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore-compat.js"></script>
@@ -421,6 +538,9 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
 
 <nav class="sidebar" id="sidebar">
   <div class="sidebar__logo">Studio Presence<span>Design · DD / Wolt / Roo</span></div>
+  <div class="nav-item" data-view="vision"><span class="nav-dot"></span>Vision</div>
+  <div class="nav-item" data-view="roadmap"><span class="nav-dot"></span>Roadmap</div>
+  <div class="nav-divider"></div>
   <div class="nav-item" data-view="dashboard"><span class="nav-dot"></span>Dashboard</div>
   <div class="nav-divider"></div>
   <div class="nav-item" data-view="show"><span class="nav-dot"></span>Show<span class="nav-pct" id="pct-show">—</span></div>
@@ -430,6 +550,7 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
   <div class="nav-item" data-view="vteam"><span class="nav-dot"></span>V-Team</div>
   <div class="nav-divider"></div>
   <div class="nav-item" data-view="signals"><span class="nav-dot"></span>Signals</div>
+  <div class="nav-divider"></div>
   <div class="nav-item" data-view="about"><span class="nav-dot"></span>About</div>
 </nav>
 
@@ -456,6 +577,22 @@ body { display: flex; min-height: 100vh; background: var(--paper); color: var(--
     <button class="dim-fab__opt" id="fab-opt-add"></button>
   </div>
   <button class="dim-fab__btn" aria-label="More options"><svg width="16" height="4" viewBox="0 0 16 4" fill="none"><circle cx="2" cy="2" r="1.5" fill="currentColor"/><circle cx="8" cy="2" r="1.5" fill="currentColor"/><circle cx="14" cy="2" r="1.5" fill="currentColor"/></svg></button>
+</div>
+
+<!-- Roadmap edit modal -->
+<div class="roadmap-modal" id="roadmap-modal">
+  <div class="roadmap-modal__backdrop" onclick="closeRoadmapModal()"></div>
+  <div class="roadmap-modal__dialog">
+    <div class="roadmap-modal__head">
+      <span class="roadmap-modal__title">Edit Roadmap</span>
+      <button class="roadmap-modal__close" onclick="closeRoadmapModal()">&#x2715;</button>
+    </div>
+    <div class="roadmap-modal__body" id="roadmap-modal-body"></div>
+    <div class="roadmap-modal__foot">
+      <button class="btn-save" onclick="saveRoadmapModal()">Save</button>
+      <button class="btn-cancel" onclick="closeRoadmapModal()">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -635,7 +772,7 @@ try {
 // ── State ────────────────────────────────────────────────────────────────────
 const KEY = 'studiopresence-tracker-v4'
 function defaultState() {
-  return { v:4, milestones:[], missions:{}, areaNames:{}, dimOwners:{}, areaOwners:{}, customOutputs:{}, summary:null, updatedAt:null }
+  return { v:4, milestones:[], missions:{}, areaNames:{}, dimOwners:{}, areaOwners:{}, customOutputs:{}, hiddenAreas:[], roadmap:null, summary:null, updatedAt:null }
 }
 let state = defaultState()
 // Warm-start from localStorage so the UI isn't blank while Firestore loads
@@ -667,7 +804,7 @@ function save() {
 }
 
 // ── Router ───────────────────────────────────────────────────────────────────
-let view = 'dashboard'
+let view = 'vision'
 function navigate(v) { view = v; render() }
 document.getElementById('sidebar').addEventListener('click', e => {
   const item = e.target.closest('.nav-item')
@@ -1067,7 +1204,7 @@ function bindMissionEdit(el, areaId, defaultText) {
   })
   el.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-      el.textContent = state.missions[areaId] || defaultText
+      el.textContent = (areaId in state.missions && state.missions[areaId] !== undefined) ? (state.missions[areaId] ?? '') : defaultText
       const a = actionsEl(); if (a) a.classList.remove('visible')
       el.blur()
     }
@@ -1084,7 +1221,7 @@ function discardMissionAction(areaId) {
   const el = document.querySelector(`.output-mission[data-area-id="${areaId}"]`)
   const area = AREA_MAP[areaId]
   if (!el || !area) return
-  el.textContent = state.missions[areaId] || area.defaultMission
+  el.textContent = (areaId in state.missions && state.missions[areaId] !== undefined) ? (state.missions[areaId] ?? '') : area.defaultMission
   const a = document.getElementById('mact-' + areaId); if (a) a.classList.remove('visible')
   el.blur()
 }
@@ -1100,29 +1237,33 @@ function cancelDeleteOutput(id) {
 }
 
 function clearMission(areaId) {
-  delete state.missions[areaId]
+  state.missions[areaId] = null
   save()
   render()
 }
 
-function handleCardDel(id, isCustom) {
-  if (isCustom) startDeleteOutput(id)
-  else clearMission(id)
+function handleCardDel(id) {
+  startDeleteOutput(id)
 }
 
 function confirmDeleteOutput(id, dimKey) {
-  if (!state.customOutputs) return
-  // Search passed dimKey first, then fall back to all dims in case of data drift
-  const keys = [dimKey, ...DIMS.map(d => d.key).filter(k => k !== dimKey)]
-  for (const k of keys) {
-    if (state.customOutputs[k]?.some(o => o.id === id)) {
-      state.customOutputs[k] = state.customOutputs[k].filter(o => o.id !== id)
-      break
+  const isCustom = DIMS.flatMap(d => (state.customOutputs?.[d.key] || [])).some(o => o.id === id)
+  if (isCustom) {
+    if (!state.customOutputs) return
+    const keys = [dimKey, ...DIMS.map(d => d.key).filter(k => k !== dimKey)]
+    for (const k of keys) {
+      if (state.customOutputs[k]?.some(o => o.id === id)) {
+        state.customOutputs[k] = state.customOutputs[k].filter(o => o.id !== id)
+        break
+      }
     }
+    delete AREA_MAP[id]
+  } else {
+    if (!state.hiddenAreas) state.hiddenAreas = []
+    if (!state.hiddenAreas.includes(id)) state.hiddenAreas.push(id)
   }
   delete state.missions[id]
   delete state.areaOwners[id]
-  delete AREA_MAP[id]
   state.milestones = state.milestones.filter(m => m.area !== id)
   save()
   render()
@@ -1476,11 +1617,12 @@ function renderDim(dimKey) {
   const total = state.milestones.filter(m => m.dim === dimKey).length
   const stat  = avg !== null ? `${avg}% avg · ${total} milestone${total!==1?'s':''}` : 'No milestones yet'
 
+  const hidden = new Set(state.hiddenAreas || [])
   const customOuts = (state.customOutputs && state.customOutputs[dimKey]) || []
-  const allOuts = [...dim.outputs, ...customOuts.map(o => ({ ...o, defaultMission: '', isCustom: true }))]
+  const allOuts = [...dim.outputs.filter(o => !hidden.has(o.id)), ...customOuts.map(o => ({ ...o, defaultMission: '', isCustom: true }))]
 
   const outputsHTML = allOuts.map(out => {
-    const missionText = state.missions[out.id] || out.defaultMission
+    const missionText = (out.id in state.missions && state.missions[out.id] !== undefined) ? (state.missions[out.id] ?? '') : out.defaultMission
     const areaPct = areaAvgProgress(out.id)
     const ms = state.milestones.filter(m => m.area === out.id)
     const headBarHTML = `<div class="output-card__head-bar"><div class="head-pbar"><div class="head-pbar__fill" style="width:${areaPct ?? 0}%;background:${dim.color}"></div></div><span class="head-pbar-pct">${areaPct !== null ? `${areaPct}%` : '—'}</span></div>`
@@ -1499,8 +1641,13 @@ function renderDim(dimKey) {
         </div>
         <div class="output-card__head-right">
           ${driChipHTML(out.id, 'area')}
-          <button class="output-card__del-btn" onclick="handleCardDel('${out.id}',${out.isCustom})" title="${out.isCustom ? 'Remove area' : 'Clear mission'}">✕</button>
+          <button class="output-card__del-btn" onclick="handleCardDel('${out.id}')" title="Remove area">✕</button>
         </div>
+      </div>
+      <div class="output-card__confirm-bar" id="confirm-${out.id}">
+        <span>Remove this area and all its data?</span>
+        <button class="btn-confirm-del" onclick="confirmDeleteOutput('${out.id}','${dimKey}')">Yes, remove</button>
+        <button class="btn-keep" onclick="cancelDeleteOutput('${out.id}')">Keep</button>
       </div>
       <div class="output-section-label">Mission</div>
       <div class="output-mission" contenteditable="true" data-area-id="${out.id}" data-placeholder="Define the mission…" spellcheck="false">${esc(missionText)}</div>
@@ -1522,11 +1669,6 @@ function renderDim(dimKey) {
           <button class="btn-cancel" onclick="closeAddForm('${out.id}')">Cancel</button>
         </div>
       </div>
-      ${out.isCustom ? `<div class="output-card__confirm-bar" id="confirm-${out.id}">
-        <span>Remove this area and all its data?</span>
-        <button class="btn-confirm-del" onclick="confirmDeleteOutput('${out.id}','${dimKey}')">Yes, remove</button>
-        <button class="btn-keep" onclick="cancelDeleteOutput('${out.id}')">Keep</button>
-      </div>` : ''}
     </div>`
   }).join('')
 
@@ -1552,6 +1694,233 @@ function renderSignals() {
     <p><strong>Repeat invites</strong> — conferences and orgs inviting Studio back without us pitching.</p>
     <p><strong>Community ask rate</strong> — external orgs asking Studio to co-create, speak, or partner.</p>
     <p><strong>Audience growth</strong> — steady growth in Studio's combined LinkedIn reach and post engagement.</p>
+  </div>`
+}
+
+function renderVision() {
+  return `<div class="vision-wrap">
+
+    <div class="vision-kicker">Studio Design · Public Presence</div>
+    <div class="vision-headline">We just make cool shit.</div>
+
+    <div class="vision-funnel-section">
+      <div class="vision-funnel-intro">
+        <div class="vision-funnel-intro__label">Why this matters</div>
+        <div class="vision-funnel-intro__text">There's a direct line between what we put out publicly and who walks in the door. Public presence is the top of the hiring funnel — it runs before anyone opens a job listing, and it determines who even considers us.</div>
+      </div>
+      <div class="funnel-stages">
+        <div class="funnel-pipe funnel-pipe--origin">
+          <div class="funnel-pipe__tag">00 · Top of funnel</div>
+          <div class="funnel-pipe__name">Public Presence</div>
+          <div class="funnel-pipe__desc">We make work the world wants to link to</div>
+        </div>
+        <div class="funnel-arrow">→</div>
+        <div class="funnel-pipe">
+          <div class="funnel-pipe__tag">01</div>
+          <div class="funnel-pipe__name">Awareness</div>
+          <div class="funnel-pipe__desc">Designer encounters our work in the wild</div>
+        </div>
+        <div class="funnel-arrow">→</div>
+        <div class="funnel-pipe">
+          <div class="funnel-pipe__tag">02</div>
+          <div class="funnel-pipe__name">Application</div>
+          <div class="funnel-pipe__desc">Resume and portfolio submitted</div>
+        </div>
+        <div class="funnel-arrow">→</div>
+        <div class="funnel-pipe">
+          <div class="funnel-pipe__tag">03</div>
+          <div class="funnel-pipe__name">Recruiter Screen</div>
+          <div class="funnel-pipe__desc">30-min call to check fit and motivation</div>
+        </div>
+        <div class="funnel-arrow">→</div>
+        <div class="funnel-pipe">
+          <div class="funnel-pipe__tag">04</div>
+          <div class="funnel-pipe__name">Portfolio Review</div>
+          <div class="funnel-pipe__desc">Design team evaluates work and process</div>
+        </div>
+        <div class="funnel-arrow">→</div>
+        <div class="funnel-pipe">
+          <div class="funnel-pipe__tag">05</div>
+          <div class="funnel-pipe__name">Interview Loop</div>
+          <div class="funnel-pipe__desc">Design challenge + cross-functional rounds</div>
+        </div>
+        <div class="funnel-arrow">→</div>
+        <div class="funnel-pipe funnel-pipe--hire">
+          <div class="funnel-pipe__tag">06</div>
+          <div class="funnel-pipe__name">Offer</div>
+          <div class="funnel-pipe__desc">Hiring committee decision + TC negotiation</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vision-2028">
+      <div class="vision-2028__label">Design 2028</div>
+      <div class="vision-2028__body">By 2028, DoorDash Design <strong>defines what it means to be a designer</strong> in the LLM era — not just internally, but for the industry. Public Presence is how the world sees that transformation happening in real time. Every output is evidence.</div>
+    </div>
+
+    <div class="vision-goals">
+      <div class="vision-goal">
+        <div class="vision-goal__num">01</div>
+        <div class="vision-goal__title">Attract the right builders</div>
+        <div class="vision-goal__body">Hire designers who will drive the 2028 transformation. The best candidates should find us before they're looking — because what we put out makes them want in.</div>
+      </div>
+      <div class="vision-goal">
+        <div class="vision-goal__num">02</div>
+        <div class="vision-goal__title">Define the future of design</div>
+        <div class="vision-goal__body">Be the studio others look to for how great design gets done in the LLM era. Not the loudest — the clearest example of what's actually possible.</div>
+      </div>
+      <div class="vision-goal">
+        <div class="vision-goal__num">03</div>
+        <div class="vision-goal__title">Make the outside want in</div>
+        <div class="vision-goal__body">Every piece of work we publish should make a designer somewhere wish they worked here. That's the signal. That's how you know it's working.</div>
+      </div>
+    </div>
+
+
+  </div>`
+}
+
+const ROADMAP_DEFAULTS = {
+  vision: "Studio Presence is about making DoorDash's design craft legible — to the studio itself, to leadership, and to the world. This is what we're working toward, quarter by quarter.",
+  quarters: [
+    { label:'Now',   name:'Q2', dates:'May – Jun 2026', goals:[
+      { id:'q2g1', title:'Stand up the tracker',       sub:'DRIs, missions, and milestones in place across all three dimensions.',         theme:'all'    },
+      { id:'q2g2', title:'Define what presence means', sub:'Align the team on what Show / Stage / Sphere looks like in practice.',         theme:'all'    },
+      { id:'q2g3', title:'First Show outputs shipped', sub:'At least one case study or portfolio piece live externally.',                  theme:'show'   },
+      { id:'q2g4', title:'Stage foundation set',       sub:'Design rituals running — crits, specs, review cadence.',                       theme:'stage'  },
+    ]},
+    { label:'Next',  name:'Q3', dates:'Jul – Sep 2026', goals:[
+      { id:'q3g1', title:'Build momentum in Sphere',   sub:'External talk or panel, community participation, design press mention.',       theme:'sphere' },
+      { id:'q3g2', title:'Show portfolio at scale',    sub:'Multi-surface work visible — consumer, merchant, Dasher.',                    theme:'show'   },
+      { id:'q3g3', title:'Raise Stage quality bar',    sub:'Prototype + spec standards adopted across major projects.',                   theme:'stage'  },
+      { id:'q3g4', title:'Tracker reflects reality',   sub:'Progress is being tracked and used in leadership reviews.',                   theme:'all'    },
+    ]},
+    { label:'Later', name:'Q4', dates:'Oct – Dec 2026', goals:[
+      { id:'q4g1', title:'Demonstrate measurable impact', sub:'Presence work tied to outcomes — hiring, retention, perception.',          theme:'sphere' },
+      { id:'q4g2', title:'Year-end showcase',          sub:"A moment that celebrates and amplifies the studio's body of work.",         theme:'show'   },
+      { id:'q4g3', title:'Set up 2027',                sub:'Retrospective, refined program model, goals for next year.',                  theme:'all'    },
+    ]},
+  ]
+}
+
+function getRoadmapData() { return state.roadmap || ROADMAP_DEFAULTS }
+
+function openRoadmapModal() {
+  const data = getRoadmapData()
+  let html = `<div>
+    <div class="rm-label">Tagline</div>
+    <textarea class="rm-textarea" id="rm-vision" rows="3">${esc(data.vision)}</textarea>
+  </div>`
+  data.quarters.forEach((q, qi) => {
+    html += `<div class="rm-quarter">
+      <div class="rm-quarter__head" onclick="this.closest('.rm-quarter').classList.toggle('collapsed')">
+        <span class="rm-quarter__name">${q.name}</span>
+        <span class="rm-quarter__meta">${q.label} · ${q.dates}</span>
+        <svg class="rm-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="rm-goals-list" id="rm-q${qi}-goals">
+        ${q.goals.map(g => rmGoalRow(qi, g)).join('')}
+      </div>
+      <button class="rm-add-btn" onclick="rmAddGoal(${qi})">+ Add goal</button>
+    </div>`
+  })
+  document.getElementById('roadmap-modal-body').innerHTML = html
+  document.getElementById('roadmap-modal').classList.add('open')
+}
+
+function rmGoalRow(qi, g) {
+  const opts = ['all','show','stage','sphere'].map(t => `<option value="${t}"${g.theme===t?' selected':''}>${t}</option>`).join('')
+  return `<div class="rm-goal-row">
+    <div class="rm-goal-fields">
+      <input class="rm-input rm-title-input" placeholder="Goal title" value="${esc(g.title)}">
+      <input class="rm-input rm-sub-input"   placeholder="Description (optional)" value="${esc(g.sub||'')}">
+      <select class="rm-theme-select">${opts}</select>
+    </div>
+    <button class="rm-goal-del" onclick="this.closest('.rm-goal-row').remove()" title="Remove">&#x2715;</button>
+  </div>`
+}
+
+function rmAddGoal(qi) {
+  const list = document.getElementById(`rm-q${qi}-goals`)
+  const div = document.createElement('div')
+  div.innerHTML = rmGoalRow(qi, { title:'', sub:'', theme:'all' })
+  list.appendChild(div.firstElementChild)
+  list.lastElementChild.querySelector('.rm-title-input').focus()
+}
+
+function closeRoadmapModal() {
+  document.getElementById('roadmap-modal').classList.remove('open')
+}
+
+function saveRoadmapModal() {
+  const data = getRoadmapData()
+  state.roadmap = {
+    vision: document.getElementById('rm-vision').value.trim(),
+    quarters: data.quarters.map((q, qi) => ({
+      ...q,
+      goals: Array.from(document.querySelectorAll(`#rm-q${qi}-goals .rm-goal-row`))
+        .map(row => ({
+          id: uid(),
+          title: row.querySelector('.rm-title-input').value.trim(),
+          sub:   row.querySelector('.rm-sub-input').value.trim(),
+          theme: row.querySelector('.rm-theme-select').value,
+        }))
+        .filter(g => g.title)
+    }))
+  }
+  save()
+  closeRoadmapModal()
+  render()
+}
+
+function renderRoadmap() {
+  const data = getRoadmapData()
+
+  function goalHtml(g) {
+    const dotColor = g.theme==='show' ? 'var(--show)' : g.theme==='stage' ? 'var(--stage)' : g.theme==='sphere' ? 'var(--sphere)' : 'var(--gold)'
+    return `<div class="roadmap-goal">
+      <div class="roadmap-goal__dot" style="background:${dotColor}"></div>
+      <div class="roadmap-goal__body">
+        <div class="roadmap-goal__title">${esc(g.title)}</div>
+        ${g.sub ? `<div class="roadmap-goal__sub">${esc(g.sub)}</div>` : ''}
+        <span class="roadmap-theme-tag ${g.theme}">${g.theme}</span>
+      </div>
+    </div>`
+  }
+
+  function col(q, isFirst, isLast, isCurrent) {
+    return `
+    <div class="roadmap-col${isCurrent ? ' roadmap-col--now' : ''}">
+      <div class="roadmap-col__header">
+        <div class="roadmap-col__label">${q.label}</div>
+        <div class="roadmap-col__name">${q.name}</div>
+        <div class="roadmap-col__dates">${q.dates}</div>
+      </div>
+      <div class="roadmap-col__track">
+        <div class="roadmap-track-line${isFirst ? ' invisible' : ''}"></div>
+        <div class="roadmap-track-dot"></div>
+        <div class="roadmap-track-line${isLast ? ' invisible' : ''}"></div>
+      </div>
+      <div class="roadmap-col__connector"></div>
+      <div class="roadmap-card">
+        <div class="roadmap-goals">${q.goals.map(goalHtml).join('')}</div>
+      </div>
+    </div>`
+  }
+
+  return `
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:36px;">
+    <div class="page-header" style="margin-bottom:0">
+      <div class="page-header__eyebrow">Program</div>
+      <div class="page-header__title">Roadmap 2026</div>
+    </div>
+    <button class="summary-btn" onclick="openRoadmapModal()" style="margin-top:10px; flex-shrink:0">Edit</button>
+  </div>
+  <p class="roadmap-vision">${esc(data.vision)}</p>
+  <div class="roadmap-cols">
+    ${col(data.quarters[0], true,  false, true)}
+    ${col(data.quarters[1], false, false, false)}
+    ${col(data.quarters[2], false, true,  false)}
   </div>`
 }
 
@@ -1583,7 +1952,7 @@ function renderPeople() {
       : ''
 
     const rowsHTML = dim.outputs.map(area => {
-      const mission = state.missions[area.id] || area.defaultMission
+      const mission = (area.id in state.missions && state.missions[area.id] !== undefined) ? (state.missions[area.id] ?? '') : area.defaultMission
       const areaPct = areaAvgProgress(area.id)
       const areaMs = state.milestones.filter(m => m.area === area.id)
       const doneMs = areaMs.filter(m => m.progress >= 100)
@@ -1665,12 +2034,14 @@ function render() {
   }
 
   const main = document.getElementById('main')
-  main.classList.toggle('main--wide', view === 'vteam')
+  main.classList.toggle('main--wide', ['vteam', 'vision', 'roadmap'].includes(view))
   if      (view === 'show')       main.innerHTML = renderDim('show')
   else if (view === 'stage')      main.innerHTML = renderDim('stage')
   else if (view === 'sphere')     main.innerHTML = renderDim('sphere')
   else if (view === 'vteam')      main.innerHTML = renderPeople()
   else if (view === 'signals')    main.innerHTML = renderSignals()
+  else if (view === 'vision')     main.innerHTML = renderVision()
+  else if (view === 'roadmap')    main.innerHTML = renderRoadmap()
   else if (view === 'about')      main.innerHTML = renderAbout()
   else                            main.innerHTML = renderDashboard()
   updateSidebar()
